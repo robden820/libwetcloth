@@ -16,3 +16,4 @@ log*.*
 *.off
 result*/*
 *.xcuserstate
+thirdparty/
