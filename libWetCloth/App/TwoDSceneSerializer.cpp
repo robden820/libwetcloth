@@ -40,10 +40,14 @@ void serialize_subprog(SerializePacket* packet) {
   std::ofstream ofs_fluid(packet->fn_fluid.c_str());
   const int num_fp = packet->m_fluid_vertices.size();
   for (int i = 0; i < num_fp; ++i) {
-    ofs_fluid << "v " << std::setprecision(8) << packet->m_fluid_vertices[i](0)
-              << " " << packet->m_fluid_vertices[i](1) << " "
+    ofs_fluid << "v " << std::setprecision(8) << packet->m_fluid_vertices[i](0) << " "
+              << packet->m_fluid_vertices[i](1) << " "
               << packet->m_fluid_vertices[i](2) << " "
-              << packet->m_fluid_radii[i] << std::endl;
+              << packet->m_fluid_radii[i] << " "
+              << packet->m_fluid_velocities[i](0) << " "
+              << packet->m_fluid_velocities[i](1) << " "
+              << packet->m_fluid_velocities[i](2) << " "
+              << std::endl;
   }
 
   std::ofstream ofs_hair(packet->fn_hairs.c_str());
@@ -243,14 +247,17 @@ void TwoDSceneSerializer::updateFluid(const TwoDScene& scene,
                                       SerializePacket* data) {
   data->m_fluid_vertices.resize(scene.getNumFluidParticles());
   data->m_fluid_radii.resize(scene.getNumFluidParticles());
+  data->m_fluid_velocities.resize(scene.getNumFluidParticles());
 
   const std::vector<int>& indices = scene.getFluidIndices();
   const VectorXs& x = scene.getX();
   const VectorXs& r = scene.getRadius();
+  const VectorXs& v = scene.getFluidV();
 
   threadutils::for_each(0, scene.getNumFluidParticles(), [&](int idx) {
     data->m_fluid_vertices[idx] = x.segment<3>(indices[idx] * 4);
     data->m_fluid_radii[idx] = r(indices[idx] * 2 + 0);
+    data->m_fluid_velocities[idx] = v.segment<3>(indices[idx] * 4);
   });
 }
 

@@ -50,6 +50,7 @@ struct SerializePacket {
 
   std::vector<Vector3s> m_fluid_vertices;
   std::vector<scalar> m_fluid_radii;
+  std::vector<Vector3s> m_fluid_velocities;
 
   std::vector<Vector3i> m_external_indices;
   std::vector<Vector3s> m_external_vertices;
