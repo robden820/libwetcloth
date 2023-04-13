@@ -1,0 +1,39 @@
+# This code is called when instances of this SOP cook.
+node = hou.pwd()
+geo = node.geometry()
+
+# Add code to modify the contents of geo.
+tshift = node.evalParm('tshift')
+frame = int(hou.frame()) + tshift
+filePath = node.evalParm('filePath')
+subPath = node.evalParm('subPath')
+f = open(filePath + '/' + subPath + '%05d.obj' % (frame), 'r')
+rmult = node.evalParm('rmult')
+rthres = node.evalParm('rthres')
+
+line = f.readline()
+radius_attrib = geo.addAttrib(hou.attribType.Point, "pscale", 1.0)
+velocity_attrib = geo.addAttrib(hou.attribType.Point, "v", (0.0, 0.0, 0.0))
+
+while(line != ""):
+    sl = str.split(line)
+    # Read position values.
+    xPos = float(sl[1])
+    yPos = float(sl[2])
+    zPos = float(sl[3])
+    # Read radius value.
+    r = float(sl[4])
+    # Read velocity values.
+    xVel = float(sl[5])
+    yVel = float(sl[6])
+    zVel = float(sl[7])
+    
+    # Create point from values.
+    point = geo.createPoint()
+    point.setPosition((xPos, yPos, zPos))
+    point.setAttribValue(radius_attrib, max(r * rmult, rthres))
+    point.setAttribValue(velocity_attrib, (xVel, yVel, zVel))
+        
+    line = f.readline()
+    
+f.close()
