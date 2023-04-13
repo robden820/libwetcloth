@@ -1,6 +1,6 @@
 <scene>
-  <duration time="4.0"/>
-  <integrator type="linearized-implicit-euler" dt="0.0002" apic="1" criterion="1e-8" manifoldsubsteps="36" maxiters="200"/>
+  <duration time="1.0"/>
+  <integrator type="linearized-implicit-euler" dt="0.0002" apic="0" criterion="1e-8" manifoldsubsteps="36" maxiters="200"/>
   <collision type="continuous-time"/>
 
   <bucketinfo size="1.152" numcells="4" kernelorder="2"/>
@@ -19,6 +19,7 @@
     <solidCohesion value="0"/>
     <yazdchiPower value="1.0"/>
     <cohesion value="0"/>
+	<useNonlinearDrag value="0"/>
   </liquidinfo>
 
   <simplegravity fx="0.0" fy="-981.0"/>
