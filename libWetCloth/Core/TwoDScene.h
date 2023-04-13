@@ -486,11 +486,41 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   void mapParticleNodesAPIC();  // particles to nodes mapping
 
+  /*
+  * Modified by Rob Dennison
+  *
+  * New functions for mapping particles to nodes.
+  * EDIT_START
+  */
+
+  void mapParticleNodesPIC();
+
+  void mapParticleNodesPolyPIC();
+
+  /*
+  * EDIT_END
+  */
+
   void mapParticleSaturationPsiNodes();
 
   void updatePorePressureNodes();
 
   void mapNodeParticlesAPIC();  // nodes to particles mapping
+
+  /* 
+  * Modified by Rob Dennison
+  * 
+  * New functions for mapping nodes to particles.
+  * EDIT_START
+  */
+
+  void mapNodeParticlesPIC();
+
+  void mapNodeParticlesPolyPIC();
+
+  /*
+  * EDIT_END
+  */
 
   void resizeParticleSystem(int num_particles);
 

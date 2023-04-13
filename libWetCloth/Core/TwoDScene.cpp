@@ -6918,6 +6918,319 @@ void TwoDScene::mapParticleNodesAPIC() {
   });
 }
 
+/*
+* Modified by Rob Dennison
+* 
+* EDIT_START
+*/
+
+void TwoDScene::mapParticleNodesPIC()
+{
+    const scalar dx = getCellSize();
+    const scalar dV = dx * dx * dx;
+    
+    m_particle_buckets.for_each_bucket([&](int bucket_idx) {
+        if (!m_bucket_activated[bucket_idx]) return;
+
+        m_node_mass_x[bucket_idx].setZero();
+        m_node_vel_x[bucket_idx].setZero();
+        m_node_vol_x[bucket_idx].setZero();
+
+        m_node_mass_y[bucket_idx].setZero();
+        m_node_vel_y[bucket_idx].setZero();
+        m_node_vol_y[bucket_idx].setZero();
+
+        m_node_mass_z[bucket_idx].setZero();
+        m_node_vel_z[bucket_idx].setZero();
+        m_node_vol_z[bucket_idx].setZero();
+
+        m_node_mass_fluid_x[bucket_idx].setZero();
+        m_node_vel_fluid_x[bucket_idx].setZero();
+        m_node_vol_fluid_x[bucket_idx].setZero();
+
+        m_node_mass_fluid_y[bucket_idx].setZero();
+        m_node_vel_fluid_y[bucket_idx].setZero();
+        m_node_vol_fluid_y[bucket_idx].setZero();
+
+        m_node_mass_fluid_z[bucket_idx].setZero();
+        m_node_vel_fluid_z[bucket_idx].setZero();
+        m_node_vol_fluid_z[bucket_idx].setZero();
+
+        m_node_psi_x[bucket_idx].setZero();
+        m_node_sat_x[bucket_idx].setZero();
+
+        m_node_psi_y[bucket_idx].setZero();
+        m_node_sat_y[bucket_idx].setZero();
+
+        m_node_psi_z[bucket_idx].setZero();
+        m_node_sat_z[bucket_idx].setZero();
+
+        const auto& bucket_node_particles_x = m_node_particles_x[bucket_idx];
+        const auto& bucket_node_particles_y = m_node_particles_y[bucket_idx];
+        const auto& bucket_node_particles_z = m_node_particles_z[bucket_idx];
+
+        const int num_nodes = getNumNodes(bucket_idx);
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto& node_particles_x = bucket_node_particles_x[i];
+            const Vector3s& np = getNodePosX(bucket_idx, i);
+
+            scalar p = 0.0;
+            scalar mass = 0.0;
+            scalar vol_solid = 0.0;
+
+            scalar vel_fluid = 0.0;
+            scalar mass_fluid = 0.0;
+            scalar vol_fluid = 0.0;
+
+            scalar vol_fluid_elasto = 0.0;
+            scalar shape_factor = 0.0;
+            scalar shape_factor_rw = 0.0;
+            Vector3s orientation = Vector3s::Zero();
+
+            for (auto& pair : node_particles_x) {
+                const int pidx = pair.first;
+
+                auto& weights = m_particle_weights[pidx];
+                const scalar& vol = m_rest_vol(pidx);
+                const Vector3s& m = m_m.segment<3>(pidx * 4);
+                const scalar& fvol = m_fluid_vol(pidx);
+                const Vector3s& fm = m_fluid_m.segment<3>(pidx * 4);
+                const Vector3s& v = m_v.segment<3>(pidx * 4);
+                const Vector3s& fluidv = m_fluid_v.segment<3>(pidx * 4);
+                const Vector3s& pos = m_x.segment<3>(pidx * 4);
+
+                if (!isFluid(pidx)) {
+                    p += v(0) * (m(0) + fm(0)) * weights(pair.second, 0);
+                    mass += (m(0) + fm(0)) * weights(pair.second, 0);
+
+                    if (m_particle_to_surfel[pidx] < 0) {
+                        vol_solid +=
+                            vol * m_rest_volume_fraction(pidx) * weights(pair.second, 0);
+                        vol_fluid_elasto += fvol * weights(pair.second, 0);
+                        shape_factor += m_shape_factor(pidx) * weights(pair.second, 0);
+                        shape_factor_rw += weights(pair.second, 0);
+                        orientation +=
+                            m_orientation.segment<3>(pidx * 3) * weights(pair.second, 0);
+                    }
+                }
+                else {
+                    vel_fluid += fluidv(0) * weights(pair.second, 0);
+                    mass_fluid += fm(0) * weights(pair.second, 0);
+                    vol_fluid += fvol * weights(pair.second, 0);
+                }
+            }
+
+            if (mass > 1e-20) {
+                m_node_vel_x[bucket_idx](i) = p / mass;
+            }
+
+            m_node_vel_fluid_x[bucket_idx](i) = vel_fluid;
+
+            if (shape_factor_rw > 1e-20) {
+                shape_factor /= shape_factor_rw;
+            }
+
+            m_node_mass_x[bucket_idx](i) = mass;
+            m_node_vol_x[bucket_idx](i) = vol_solid + vol_fluid_elasto;
+
+            m_node_mass_fluid_x[bucket_idx](i) = mass_fluid;
+            m_node_vol_fluid_x[bucket_idx](i) = vol_fluid;
+
+            m_node_psi_x[bucket_idx](i) = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
+            m_node_sat_x[bucket_idx](i) = mathutils::clamp(
+                (vol_fluid + vol_fluid_elasto) / std::max(1e-20, dV - vol_solid), 0.0,
+                1.0);
+
+            const scalar lo = orientation.norm();
+            if (lo > 1e-20) {
+                orientation /= lo;
+            }
+            m_node_orientation_x[bucket_idx].segment<3>(i * 3) = orientation;
+            m_node_shape_factor_x[bucket_idx](i) = shape_factor;
+        }
+
+        assert(!std::isnan(m_node_vel_x[bucket_idx].sum()));
+        assert(!std::isnan(m_node_mass_fluid_x[bucket_idx].sum()));
+        assert(!std::isnan(m_node_vol_fluid_x[bucket_idx].sum()));
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto& node_particles_y = bucket_node_particles_y[i];
+            const Vector3s& np = getNodePosY(bucket_idx, i);
+
+            scalar p = 0.0;
+            scalar mass = 0.0;
+            scalar vol_solid = 0.0;
+
+            scalar vel_fluid = 0.0;
+            scalar mass_fluid = 0.0;
+            scalar vol_fluid = 0.0;
+
+            scalar vol_fluid_elasto = 0.0;
+            scalar shape_factor = 0.0;
+            scalar shape_factor_rw = 0.0;
+            Vector3s orientation = Vector3s::Zero();
+
+            for (auto& pair : node_particles_y) {
+                const int pidx = pair.first;
+
+                auto& weights = m_particle_weights[pidx];
+                const scalar& vol = m_rest_vol(pidx);
+                const Vector3s& m = m_m.segment<3>(pidx * 4);
+                const scalar& fvol = m_fluid_vol(pidx);
+                const Vector3s& fm = m_fluid_m.segment<3>(pidx * 4);
+                const Vector3s& v = m_v.segment<3>(pidx * 4);
+                const Vector3s& fluidv = m_fluid_v.segment<3>(pidx * 4);
+                const Vector3s& pos = m_x.segment<3>(pidx * 4);
+
+                if (!isFluid(pidx)) {
+                    p += v(1) * (m(1) + fm(1)) * weights(pair.second, 1);
+                    mass += (m(1) + fm(1)) * weights(pair.second, 1);
+
+                    if (m_particle_to_surfel[pidx] < 0) {
+                        vol_solid +=
+                            vol * m_rest_volume_fraction(pidx) * weights(pair.second, 1);
+                        vol_fluid_elasto += fvol * weights(pair.second, 1);
+                        shape_factor += m_shape_factor(pidx) * weights(pair.second, 1);
+                        shape_factor_rw += weights(pair.second, 1);
+                        orientation +=
+                            m_orientation.segment<3>(pidx * 3) * weights(pair.second, 1);
+                    }
+                }
+                else {
+                    vel_fluid += fluidv(1) * weights(pair.second, 1);
+                    mass_fluid += fm(1) * weights(pair.second, 1);
+                    vol_fluid += fvol * weights(pair.second, 1);
+                }
+            }
+
+            if (mass > 1e-20) {
+                m_node_vel_y[bucket_idx](i) = p / mass;
+            }
+
+            m_node_vel_fluid_y[bucket_idx](i) = vel_fluid;
+
+            if (shape_factor_rw > 1e-20) {
+                shape_factor /= shape_factor_rw;
+            }
+
+            m_node_mass_y[bucket_idx](i) = mass;
+            m_node_vol_y[bucket_idx](i) = vol_solid + vol_fluid_elasto;
+
+            m_node_mass_fluid_y[bucket_idx](i) = mass_fluid;
+            m_node_vol_fluid_y[bucket_idx](i) = vol_fluid;
+
+            m_node_psi_y[bucket_idx](i) = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
+            m_node_sat_y[bucket_idx](i) = mathutils::clamp(
+                (vol_fluid + vol_fluid_elasto) / std::max(1e-20, dV - vol_solid), 0.0,
+                1.0);
+
+            const scalar lo = orientation.norm();
+            if (lo > 1e-20) {
+                orientation /= lo;
+            }
+            m_node_orientation_y[bucket_idx].segment<3>(i * 3) = orientation;
+            m_node_shape_factor_y[bucket_idx](i) = shape_factor;
+        }
+
+        assert(!std::isnan(m_node_vel_y[bucket_idx].sum()));
+        assert(!std::isnan(m_node_mass_fluid_y[bucket_idx].sum()));
+        assert(!std::isnan(m_node_vol_fluid_y[bucket_idx].sum()));
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto& node_particles_z = bucket_node_particles_z[i];
+            const Vector3s& np = getNodePosZ(bucket_idx, i);
+
+            scalar p = 0.0;
+            scalar mass = 0.0;
+            scalar vol_solid = 0.0;
+
+            scalar vel_fluid = 0.0;
+            scalar mass_fluid = 0.0;
+            scalar vol_fluid = 0.0;
+
+            scalar vol_fluid_elasto = 0.0;
+            scalar shape_factor = 0.0;
+            scalar shape_factor_rw = 0.0;
+            Vector3s orientation = Vector3s::Zero();
+
+            for (auto& pair : node_particles_z) {
+                const int pidx = pair.first;
+
+                auto& weights = m_particle_weights[pidx];
+                const scalar& vol = m_rest_vol(pidx);
+                const Vector3s& m = m_m.segment<3>(pidx * 4);
+                const scalar& fvol = m_fluid_vol(pidx);
+                const Vector3s& fm = m_fluid_m.segment<3>(pidx * 4);
+                const Vector3s& v = m_v.segment<3>(pidx * 4);
+                const Vector3s& fluidv = m_fluid_v.segment<3>(pidx * 4);
+                const Vector3s& pos = m_x.segment<3>(pidx * 4);
+
+                if (!isFluid(pidx)) {
+                    p += v(2) * (m(2) + fm(2)) * weights(pair.second, 2);
+                    mass += (m(2) + fm(2)) * weights(pair.second, 2);
+
+                    if (m_particle_to_surfel[pidx] < 0) {
+                        vol_solid +=
+                            vol * m_rest_volume_fraction(pidx) * weights(pair.second, 2);
+                        vol_fluid_elasto += fvol * weights(pair.second, 2);
+                        shape_factor += m_shape_factor(pidx) * weights(pair.second, 2);
+                        shape_factor_rw += weights(pair.second, 2);
+                        orientation +=
+                            m_orientation.segment<3>(pidx * 3) * weights(pair.second, 2);
+                    }
+                }
+                else {
+                    vel_fluid += fluidv(2) * weights(pair.second, 2);
+                    mass_fluid += fm(2) * weights(pair.second, 2);
+                    vol_fluid += fvol * weights(pair.second, 2);
+                }
+            }
+
+            if (mass > 1e-20) {
+                m_node_vel_z[bucket_idx](i) = p / mass;
+            }
+
+            m_node_vel_fluid_z[bucket_idx](i) = vel_fluid;
+
+            if (shape_factor_rw > 1e-20) {
+                shape_factor /= shape_factor_rw;
+            }
+
+            m_node_mass_z[bucket_idx](i) = mass;
+            m_node_vol_z[bucket_idx](i) = vol_solid + vol_fluid_elasto;
+
+            m_node_mass_fluid_z[bucket_idx](i) = mass_fluid;
+            m_node_vol_fluid_z[bucket_idx](i) = vol_fluid;
+
+            m_node_psi_z[bucket_idx](i) = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
+            m_node_sat_z[bucket_idx](i) = mathutils::clamp(
+                (vol_fluid + vol_fluid_elasto) / std::max(1e-20, dV - vol_solid), 0.0,
+                1.0);
+
+            const scalar lo = orientation.norm();
+            if (lo > 1e-20) {
+                orientation /= lo;
+            }
+            m_node_orientation_z[bucket_idx].segment<3>(i * 3) = orientation;
+            m_node_shape_factor_z[bucket_idx](i) = shape_factor;
+        }
+
+        assert(!std::isnan(m_node_vel_z[bucket_idx].sum()));
+        assert(!std::isnan(m_node_mass_fluid_z[bucket_idx].sum()));
+        assert(!std::isnan(m_node_vol_fluid_z[bucket_idx].sum()));
+        });
+}
+
+void TwoDScene::mapParticleNodesPolyPIC()
+{
+
+}
+
+/*
+* EDIT_END
+*/
+
 bool TwoDScene::isFluid(int pidx) const {
   return pidx >= getNumElastoParticles();
 }
@@ -7088,6 +7401,174 @@ void TwoDScene::mapNodeParticlesAPIC() {
     }
   });
 }
+
+/*
+* Modified by Rob Dennison
+*
+* EDIT_START
+*/
+
+void TwoDScene::mapNodeParticlesPIC()
+{
+    const int num_part = getNumParticles();
+
+    const scalar invD = getInverseDCoeff();
+
+    threadutils::for_each(0, num_part, [&](int pidx)
+    {
+        if (m_particle_to_surfel[pidx] >= 0 || isOutsideFluid(pidx))
+        {
+            return;
+        }
+
+        auto& indices_x = m_particle_nodes_x[pidx];
+        auto& indices_y = m_particle_nodes_y[pidx];
+        auto& indices_z = m_particle_nodes_z[pidx];
+
+        auto& weights = m_particle_weights[pidx];
+
+        m_v.segment<3>(pidx * 4).setZero();
+
+        m_fluid_v.segment<4>(pidx * 4).setZero();
+
+        bool is_fluid = isFluid(pidx);
+
+        if (is_fluid)
+        {
+            Vector3s fv = Vector3s::Zero();
+
+            for (int i = 0; i < indices_x.rows(); ++i)
+            {
+                const int node_bucket_idx = indices_x(i, 0);
+
+                if (!m_bucket_activated[node_bucket_idx])
+                {
+                    continue;
+                }
+
+                const int node_idx = indices_x(i, 1);
+
+                scalar fnv = m_node_vel_fluid_x[node_bucket_idx](node_idx);
+
+                fv(0) += fnv * weights(i, 0);
+            }
+
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+
+            for (int i = 0; i < indices_y.rows(); ++i)
+            {
+                const int node_bucket_idx = indices_y(i, 0);
+
+                if (!m_bucket_activated[node_bucket_idx])
+                {
+                    continue;
+                }
+
+                const int node_idx = indices_y(i, 1);
+
+                scalar fnv = m_node_vel_fluid_y[node_bucket_idx](node_idx);
+
+                fv(1) += fnv * weights(i, 1);
+            }
+
+            assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+
+            for (int i = 0; i < indices_z.rows(); ++i)
+            {
+                const int node_bucket_idx = indices_z(i, 0);
+
+                if (!m_bucket_activated[node_bucket_idx])
+                {
+                    continue;
+                }
+
+                const int node_idx = indices_z(i, 1);
+
+                scalar fnv = m_node_vel_fluid_z[node_bucket_idx](node_idx);
+
+                fv(2) += fnv * weights(i, 2);
+            }
+
+            m_fluid_v.segment<3>(pidx * 4) = fv;
+            m_fluid_v(pidx * 4 + 3) = 0.0;
+
+            assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+
+        }
+        else
+        {
+            for (int i = 0; i < indices_x.rows(); ++i)
+            {
+                const int node_bucket_idx = indices_x(i, 0);
+
+                if (!m_bucket_activated[node_bucket_idx])
+                {
+                    continue;
+                }
+
+                const int node_idx = indices_x(i, 1);
+
+                const scalar& nv = m_node_vel_x[node_bucket_idx](node_idx);
+
+                m_v(pidx * 4 + 0) += nv * weights(i, 0);
+            }
+
+            assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+
+            for (int i = 0; i < indices_y.rows(); ++i)
+            {
+                const int node_bucket_idx = indices_y(i, 0);
+
+                if (!m_bucket_activated[node_bucket_idx])
+                {
+                    continue;
+                }
+
+                const int node_idx = indices_y(i, 1);
+
+                const scalar& nv = m_node_vel_y[node_bucket_idx](node_idx);
+
+                m_v(pidx * 4 + 1) += nv * weights(i, 1);
+            }
+
+            assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+
+            for (int i = 0; i < indices_z.rows(); ++i)
+            {
+                const int node_bucket_idx = indices_z(i, 0);
+
+                if (!m_bucket_activated[node_bucket_idx])
+                {
+                    continue;
+                }
+
+                const int node_idx = indices_z(i, 1);
+
+                const scalar& nv = m_node_vel_z[node_bucket_idx](node_idx);
+
+                m_v(pidx * 4 + 2) += nv * weights(i, 2);
+            }
+
+            m_v.segment<4>(pidx * 4) *= m_liquid_info.elasto_advect_coeff;
+
+            assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+        }
+    });
+}
+
+void TwoDScene::mapNodeParticlesPolyPIC()
+{
+
+}
+
+/*
+* EDIT_END
+*/
 
 void TwoDScene::insertSolveGroup(const VectorXi& group) {
   m_solve_groups.push_back(group);
