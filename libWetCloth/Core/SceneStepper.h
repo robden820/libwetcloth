@@ -18,6 +18,7 @@
 
 class SceneStepper {
  public:
+
   virtual ~SceneStepper();
 
   virtual bool stepScene(TwoDScene& scene, scalar dt) = 0;
@@ -56,9 +57,9 @@ class SceneStepper {
 
   virtual std::string getName() const = 0;
 
-  virtual void setUseApic(bool apic);
+  virtual void setPICMethod(int method);
 
-  virtual bool useApic() const;
+  virtual int getPICMethod() const;
 
   // tools function
   void mapNodeToSoftParticles(const TwoDScene& scene,
@@ -149,7 +150,8 @@ class SceneStepper {
   void allocateLagrangianVectors(const TwoDScene& scene, VectorXs& vec);
 
  protected:
-  bool m_apic;
+
+     int m_pic_method;
 };
 
 #endif

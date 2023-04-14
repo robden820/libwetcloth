@@ -1902,6 +1902,7 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.levelset_thickness = 0.25;
   info.iteration_print_step = 0;
   info.elasto_capture_rate = 1.0;
+  info.scalar_modes = 8;
 
   rapidxml::xml_node<>* nd = node->first_node("liquidinfo");
   if (nd) {
@@ -2577,6 +2578,18 @@ void TwoDSceneXMLParser::loadLiquidInfo(
                   << std::endl;
         exit(1);
       }
+    }
+
+    if ((subnd = nd->first_node("scalarModes"))) {
+        std::string attribute(subnd->first_attribute("value")->value());
+        if (!stringutils::extractFromString(attribute, info.scalar_modes)) {
+            std::cerr << outputmod::startred
+                << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+                << " Failed to parse value of scalarModes attribute for "
+                "LiquidInfo. Value must be integer. Exiting."
+                << std::endl;
+            exit(1);
+        }
     }
   }
 
@@ -3336,19 +3349,27 @@ void TwoDSceneXMLParser::loadIntegrator(
     exit(1);
   }
 
-  bool useApic = false;
-  rapidxml::xml_attribute<>* apnd = nd->first_attribute("apic");
+  int pic_method = 0;
+  rapidxml::xml_attribute<>* apnd = nd->first_attribute("picMethod");
   if (apnd) {
-    if (!stringutils::extractFromString(std::string(apnd->value()), useApic)) {
+    if (!stringutils::extractFromString(std::string(apnd->value()), pic_method)) {
       std::cerr << outputmod::startred
                 << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
-                << " Failed to parse 'apic' attribute for integrator. Value "
-                   "must be bool. Exiting."
+                << " Failed to parse 'picMethod' attribute for integrator. Value "
+                   "must be int [0,1,2]. Exiting."
                 << std::endl;
       exit(1);
     }
+    if (pic_method < 0 || pic_method > 2)
+    {
+        std::cerr << outputmod::startred
+            << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+            << "Value of 'picMethod' must be int [0,1,2]. Exiting."
+            << std::endl;
+        exit(1);
+    }
   }
-  scenestepper->setUseApic(useApic);
+  scenestepper->setPICMethod(pic_method);
 
   // std::cout << "Integrator: " << (*scenestepper)->getName() << "   dt: " <<
   // dt << std::endl;

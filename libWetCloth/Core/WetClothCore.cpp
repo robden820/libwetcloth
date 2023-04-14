@@ -159,8 +159,19 @@ void WetClothCore::stepSystem(const scalar& dt) {
     t0 = t1;
 
     // Map the Liquid Particles and Elastic Vertices onto Grid
-    m_scene->mapParticleNodesAPIC();
-
+    if (m_scene_stepper->getPICMethod() == 0)
+    {
+        m_scene->mapParticleNodesPIC();
+    }
+    else if(m_scene_stepper->getPICMethod() == 1)
+    {
+        m_scene->mapParticleNodesAPIC();
+    }
+    else
+    {
+        m_scene->mapParticleNodesPolyPIC();
+    }
+   
     // Save the Grid Velocity
     m_scene->saveFluidVelocity();
 
@@ -174,13 +185,13 @@ void WetClothCore::stepSystem(const scalar& dt) {
     timing_buffer[3] +=
         t1 - t0;  // APIC Mapping & Computing the Fields (all above)
     t0 = t1;
-
+    
     // Explicitly Integrate the Elastic and Liquid Velocity
     m_scene_stepper->stepVelocity(*m_scene, sub_dt);
     t1 = timingutils::seconds();
     timing_buffer[4] += t1 - t0;  // Velocity Prediction
     t0 = t1;
-
+    
     // Check Divergence if Necessary
     if (m_scene->getLiquidInfo().check_divergence) {
       m_info.m_initial_div_accu +=
@@ -245,7 +256,19 @@ void WetClothCore::stepSystem(const scalar& dt) {
     t0 = t1;
 
     // Transfer Velocity Back to Particles and Elastic Vertices
-    m_scene->mapNodeParticlesAPIC();
+    if (m_scene_stepper->getPICMethod() == 0)
+    {
+        m_scene->mapNodeParticlesPIC();
+    }
+    else if (m_scene_stepper->getPICMethod() == 1)
+    {
+        m_scene->mapNodeParticlesAPIC();
+    }
+    else
+    {
+        m_scene->mapNodeParticlesPolyPIC();
+    }
+    
     t1 = timingutils::seconds();
     timing_buffer[9] += t1 - t0;  // APIC Map Particle Back
     t0 = t1;

@@ -40,9 +40,9 @@ bool SceneStepper::advectScene(TwoDScene& scene, scalar dt) {
   return true;
 }
 
-void SceneStepper::setUseApic(bool apic) { m_apic = apic; }
+void SceneStepper::setPICMethod(int method) { m_pic_method = method; }
 
-bool SceneStepper::useApic() const { return m_apic; }
+int SceneStepper::getPICMethod() const { return m_pic_method; }
 
 void SceneStepper::mapNodeToSoftParticles(
     const TwoDScene& scene, const std::vector<VectorXs>& node_vec_x,
