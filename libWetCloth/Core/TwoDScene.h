@@ -60,6 +60,7 @@ struct LiquidInfo {
   int bending_scheme;
   int iteration_print_step;
   int surf_tension_smoothing_step;
+  int scalar_modes;
   bool use_surf_tension;
   bool use_cohesion;
   bool solid_cohesion;
@@ -987,6 +988,13 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   VectorXs m_face_rest_area;
   MatrixXs m_B;  // particle B matrix
   MatrixXs m_fB;
+
+  VectorXs m_fluid_scalar_coeff_x; // fluid particle coefficients C.
+  VectorXs m_fluid_scalar_coeff_y;
+  VectorXs m_fluid_scalar_coeff_z;
+  VectorXs m_scalar_coeff_x; // particle coefficients C.
+  VectorXs m_scalar_coeff_y;
+  VectorXs m_scalar_coeff_z;
 
   VectorXs m_x_gauss;
   VectorXs m_v_gauss;

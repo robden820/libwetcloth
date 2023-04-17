@@ -24,6 +24,8 @@
 #include "SpherePattern.h"
 #include "VolumeFractions.h"
 
+#include "PolyPICHelper.h"
+
 /*!
  * Outputting parameters for debugging
  */
@@ -735,6 +737,13 @@ void TwoDScene::resizeParticleSystem(int num_particles) {
   m_B.resize(num_particles * 3, 3);
   m_fB.resize(num_particles * 3, 3);
 
+  m_fluid_scalar_coeff_x.resize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_y.resize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_z.resize(num_particles * m_liquid_info.scalar_modes);
+  m_scalar_coeff_x.resize(num_particles * m_liquid_info.scalar_modes);
+  m_scalar_coeff_y.resize(num_particles * m_liquid_info.scalar_modes);
+  m_scalar_coeff_z.resize(num_particles * m_liquid_info.scalar_modes);
+
   m_particle_nodes_x.resize(num_particles);
   m_particle_nodes_y.resize(num_particles);
   m_particle_nodes_z.resize(num_particles);
@@ -764,6 +773,13 @@ void TwoDScene::resizeParticleSystem(int num_particles) {
   m_volume_fraction.setZero();
   m_rest_volume_fraction.setZero();
   m_inside.setZero();
+
+  m_fluid_scalar_coeff_x.setZero();
+  m_fluid_scalar_coeff_y.setZero();
+  m_fluid_scalar_coeff_z.setZero();
+  m_scalar_coeff_x.setZero();
+  m_scalar_coeff_y.setZero();
+  m_scalar_coeff_z.setZero();
 }
 
 bool TwoDScene::isOutsideFluid(int pidx) const {
@@ -803,6 +819,20 @@ void TwoDScene::conservativeResizeParticles(int num_particles) {
 
   m_B.conservativeResize(num_particles * 3, 3);
   m_fB.conservativeResize(num_particles * 3, 3);
+
+  m_scalar_coeff_x.resize(num_particles * m_liquid_info.scalar_modes);
+  m_scalar_coeff_y.resize(num_particles * m_liquid_info.scalar_modes);
+  m_scalar_coeff_z.resize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_x.resize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_y.resize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_z.resize(num_particles * m_liquid_info.scalar_modes);
+
+  m_fluid_scalar_coeff_x.setZero();
+  m_fluid_scalar_coeff_y.setZero();
+  m_fluid_scalar_coeff_z.setZero();
+  m_scalar_coeff_x.setZero();
+  m_scalar_coeff_y.setZero();
+  m_scalar_coeff_z.setZero();
 
   m_particle_nodes_x.resize(num_particles);
   m_particle_nodes_y.resize(num_particles);
@@ -2426,6 +2456,8 @@ void TwoDScene::splitLiquidParticles() {
 
   m_fluids.resize(old_num_fluids + num_add);
 
+  const int modes = m_liquid_info.scalar_modes;
+
   threadutils::for_each(0, num_fluids, [&](int fidx_parent) {
     const int pidx_parent = m_fluids[fidx_parent];
     const int idx_np = ((fidx_parent == 0) ? 0 : n_additional[fidx_parent - 1]);
@@ -2462,6 +2494,13 @@ void TwoDScene::splitLiquidParticles() {
       m_classifier[pidx] = m_classifier[pidx_parent];
       m_shape_factor(pidx) = 0.0;
       m_orientation.segment<3>(pidx * 3).setZero();
+
+      m_scalar_coeff_x.segment(pidx * modes, modes) = m_scalar_coeff_x.segment(pidx_parent * modes, modes);
+      m_scalar_coeff_y.segment(pidx * modes, modes) = m_scalar_coeff_y.segment(pidx_parent * modes, modes);
+      m_scalar_coeff_z.segment(pidx * modes, modes) = m_scalar_coeff_z.segment(pidx_parent * modes, modes);
+      m_fluid_scalar_coeff_x.segment(pidx * modes, modes) = m_fluid_scalar_coeff_x.segment(pidx_parent * modes, modes);
+      m_fluid_scalar_coeff_y.segment(pidx * modes, modes) = m_fluid_scalar_coeff_y.segment(pidx_parent * modes, modes);
+      m_fluid_scalar_coeff_z.segment(pidx * modes, modes) = m_fluid_scalar_coeff_z.segment(pidx_parent * modes, modes);
 
       const int fidx = fidx_new_parts + i;
       m_fluids[fidx] = pidx;
@@ -7224,7 +7263,328 @@ void TwoDScene::mapParticleNodesPIC()
 
 void TwoDScene::mapParticleNodesPolyPIC()
 {
+    const scalar dx = getCellSize();
+    const scalar dV = dx * dx * dx;
 
+    const int modes = m_liquid_info.scalar_modes;
+
+    m_particle_buckets.for_each_bucket([&](int bucket_idx) {
+        if (!m_bucket_activated[bucket_idx]) return;
+
+        m_node_mass_x[bucket_idx].setZero();
+        m_node_vel_x[bucket_idx].setZero();
+        m_node_vol_x[bucket_idx].setZero();
+
+        m_node_mass_y[bucket_idx].setZero();
+        m_node_vel_y[bucket_idx].setZero();
+        m_node_vol_y[bucket_idx].setZero();
+
+        m_node_mass_z[bucket_idx].setZero();
+        m_node_vel_z[bucket_idx].setZero();
+        m_node_vol_z[bucket_idx].setZero();
+
+        m_node_mass_fluid_x[bucket_idx].setZero();
+        m_node_vel_fluid_x[bucket_idx].setZero();
+        m_node_vol_fluid_x[bucket_idx].setZero();
+
+        m_node_mass_fluid_y[bucket_idx].setZero();
+        m_node_vel_fluid_y[bucket_idx].setZero();
+        m_node_vol_fluid_y[bucket_idx].setZero();
+
+        m_node_mass_fluid_z[bucket_idx].setZero();
+        m_node_vel_fluid_z[bucket_idx].setZero();
+        m_node_vol_fluid_z[bucket_idx].setZero();
+
+        m_node_psi_x[bucket_idx].setZero();
+        m_node_sat_x[bucket_idx].setZero();
+
+        m_node_psi_y[bucket_idx].setZero();
+        m_node_sat_y[bucket_idx].setZero();
+
+        m_node_psi_z[bucket_idx].setZero();
+        m_node_sat_z[bucket_idx].setZero();
+
+        const auto& bucket_node_particles_x = m_node_particles_x[bucket_idx];
+        const auto& bucket_node_particles_y = m_node_particles_y[bucket_idx];
+        const auto& bucket_node_particles_z = m_node_particles_z[bucket_idx];
+
+        const int num_nodes = getNumNodes(bucket_idx);
+
+        
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto& node_particles_x = bucket_node_particles_x[i];
+            const Vector3s& np = getNodePosX(bucket_idx, i);
+
+            scalar p = 0.0;
+            scalar mass = 0.0;
+            scalar vol_solid = 0.0;
+
+            scalar p_fluid = 0.0;
+            scalar mass_fluid = 0.0;
+            scalar vol_fluid = 0.0;
+
+            scalar vol_fluid_elasto = 0.0;
+            scalar shape_factor = 0.0;
+            scalar shape_factor_rw = 0.0;
+            Vector3s orientation = Vector3s::Zero();
+
+            for (auto& pair : node_particles_x) {
+                const int pidx = pair.first;
+
+                auto& weights = m_particle_weights[pidx];
+                const scalar& vol = m_rest_vol(pidx);
+                const Vector3s& m = m_m.segment<3>(pidx * 4);
+                const scalar& fvol = m_fluid_vol(pidx);
+                const Vector3s& fm = m_fluid_m.segment<3>(pidx * 4);
+                const Vector3s& v = m_v.segment<3>(pidx * 4);
+                const Vector3s& fluidv = m_fluid_v.segment<3>(pidx * 4);
+                const Vector3s& pos = m_x.segment<3>(pidx * 4);
+                const VectorXs& fluid_scalar_coeff = m_fluid_scalar_coeff_x.segment(pidx * modes, modes);
+                const VectorXs& scalar_coeff = m_scalar_coeff_x.segment(pidx * modes, modes);
+
+                if (!isFluid(pidx)) {
+                    PolyPICHelper polyPIC(np, pos, dx, scalar_coeff);
+
+                    p += (m(0) + fm(0)) * weights(pair.second, 0) * polyPIC.Contribution(modes);
+                    mass += (m(0) + fm(0)) * weights(pair.second, 0);
+
+                    if (m_particle_to_surfel[pidx] < 0) {
+                        vol_solid +=
+                            vol * m_rest_volume_fraction(pidx) * weights(pair.second, 0);
+                        vol_fluid_elasto += fvol * weights(pair.second, 0);
+                        shape_factor += m_shape_factor(pidx) * weights(pair.second, 0);
+                        shape_factor_rw += weights(pair.second, 0);
+                        orientation +=
+                            m_orientation.segment<3>(pidx * 3) * weights(pair.second, 0);
+                    }
+                }
+                else { 
+                    PolyPICHelper polyPIC(np, pos, dx, fluid_scalar_coeff);
+
+                    p_fluid += fm(0) * weights(pair.second, 0) * polyPIC.Contribution(modes);
+                    mass_fluid += fm(0) * weights(pair.second, 0);
+                    vol_fluid += fvol * weights(pair.second, 0);
+                }
+            }
+
+            if (mass > 1e-20) {
+                m_node_vel_x[bucket_idx](i) = p / mass;
+            }
+
+            if (mass_fluid > 1e-20) {
+                m_node_vel_fluid_x[bucket_idx](i) = p_fluid / mass_fluid;
+            }
+
+            if (shape_factor_rw > 1e-20) {
+                shape_factor /= shape_factor_rw;
+            }
+
+            m_node_mass_x[bucket_idx](i) = mass;
+            m_node_vol_x[bucket_idx](i) = vol_solid + vol_fluid_elasto;
+
+            m_node_mass_fluid_x[bucket_idx](i) = mass_fluid;
+            m_node_vol_fluid_x[bucket_idx](i) = vol_fluid;
+
+            m_node_psi_x[bucket_idx](i) = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
+            m_node_sat_x[bucket_idx](i) = mathutils::clamp(
+                (vol_fluid + vol_fluid_elasto) / std::max(1e-20, dV - vol_solid), 0.0,
+                1.0);
+
+            const scalar lo = orientation.norm();
+            if (lo > 1e-20) {
+                orientation /= lo;
+            }
+            m_node_orientation_x[bucket_idx].segment<3>(i * 3) = orientation;
+            m_node_shape_factor_x[bucket_idx](i) = shape_factor;
+        }
+
+        assert(!std::isnan(m_node_vel_x[bucket_idx].sum()));
+        assert(!std::isnan(m_node_mass_fluid_x[bucket_idx].sum()));
+        assert(!std::isnan(m_node_vol_fluid_x[bucket_idx].sum()));
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto& node_particles_y = bucket_node_particles_y[i];
+            const Vector3s& np = getNodePosY(bucket_idx, i);
+
+            scalar p = 0.0;
+            scalar mass = 0.0;
+            scalar vol_solid = 0.0;
+
+            scalar p_fluid = 0.0;
+            scalar mass_fluid = 0.0;
+            scalar vol_fluid = 0.0;
+
+            scalar vol_fluid_elasto = 0.0;
+            scalar shape_factor = 0.0;
+            scalar shape_factor_rw = 0.0;
+            Vector3s orientation = Vector3s::Zero();
+
+            for (auto& pair : node_particles_y) {
+                const int pidx = pair.first;
+
+                auto& weights = m_particle_weights[pidx];
+                const scalar& vol = m_rest_vol(pidx);
+                const Vector3s& m = m_m.segment<3>(pidx * 4);
+                const scalar& fvol = m_fluid_vol(pidx);
+                const Vector3s& fm = m_fluid_m.segment<3>(pidx * 4);
+                const Vector3s& v = m_v.segment<3>(pidx * 4);
+                const Vector3s& fluidv = m_fluid_v.segment<3>(pidx * 4);
+                const Vector3s& pos = m_x.segment<3>(pidx * 4);
+                const VectorXs& fluid_scalar_coeff = m_fluid_scalar_coeff_y.segment(pidx * modes, modes);
+                const VectorXs& scalar_coeff = m_scalar_coeff_y.segment(pidx * modes, modes);
+
+                if (!isFluid(pidx)) {
+                    PolyPICHelper polyPIC(np, pos, dx, scalar_coeff);
+
+                    p += (m(1) + fm(1)) * weights(pair.second, 1) * polyPIC.Contribution(modes);
+                    mass += (m(1) + fm(1)) * weights(pair.second, 1);
+
+                    if (m_particle_to_surfel[pidx] < 0) {
+                        vol_solid +=
+                            vol * m_rest_volume_fraction(pidx) * weights(pair.second, 1);
+                        vol_fluid_elasto += fvol * weights(pair.second, 1);
+                        shape_factor += m_shape_factor(pidx) * weights(pair.second, 1);
+                        shape_factor_rw += weights(pair.second, 1);
+                        orientation +=
+                            m_orientation.segment<3>(pidx * 3) * weights(pair.second, 1);
+                    }
+                }
+                else {
+                    PolyPICHelper polyPIC(np, pos, dx, fluid_scalar_coeff);
+
+                    p_fluid += fm(1) * weights(pair.second, 1) * polyPIC.Contribution(modes);
+                    mass_fluid += fm(1) * weights(pair.second, 1);
+                    vol_fluid += fvol * weights(pair.second, 1);
+                }
+            }
+
+            if (mass > 1e-20) {
+                m_node_vel_y[bucket_idx](i) = p / mass;
+            }
+
+            if (mass_fluid > 1e-20) {
+                m_node_vel_fluid_y[bucket_idx](i) = p_fluid / mass_fluid;
+            }
+
+            if (shape_factor_rw > 1e-20) {
+                shape_factor /= shape_factor_rw;
+            }
+
+            m_node_mass_y[bucket_idx](i) = mass;
+            m_node_vol_y[bucket_idx](i) = vol_solid + vol_fluid_elasto;
+
+            m_node_mass_fluid_y[bucket_idx](i) = mass_fluid;
+            m_node_vol_fluid_y[bucket_idx](i) = vol_fluid;
+
+            m_node_psi_y[bucket_idx](i) = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
+            m_node_sat_y[bucket_idx](i) = mathutils::clamp(
+                (vol_fluid + vol_fluid_elasto) / std::max(1e-20, dV - vol_solid), 0.0,
+                1.0);
+
+            const scalar lo = orientation.norm();
+            if (lo > 1e-20) {
+                orientation /= lo;
+            }
+            m_node_orientation_y[bucket_idx].segment<3>(i * 3) = orientation;
+            m_node_shape_factor_y[bucket_idx](i) = shape_factor;
+        }
+
+        assert(!std::isnan(m_node_vel_y[bucket_idx].sum()));
+        assert(!std::isnan(m_node_mass_fluid_y[bucket_idx].sum()));
+        assert(!std::isnan(m_node_vol_fluid_y[bucket_idx].sum()));
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto& node_particles_z = bucket_node_particles_z[i];
+            const Vector3s& np = getNodePosZ(bucket_idx, i);
+
+            scalar p = 0.0;
+            scalar mass = 0.0;
+            scalar vol_solid = 0.0;
+
+            scalar p_fluid = 0.0;
+            scalar mass_fluid = 0.0;
+            scalar vol_fluid = 0.0;
+
+            scalar vol_fluid_elasto = 0.0;
+            scalar shape_factor = 0.0;
+            scalar shape_factor_rw = 0.0;
+            Vector3s orientation = Vector3s::Zero();
+
+            for (auto& pair : node_particles_z) {
+                const int pidx = pair.first;
+
+                auto& weights = m_particle_weights[pidx];
+                const scalar& vol = m_rest_vol(pidx);
+                const Vector3s& m = m_m.segment<3>(pidx * 4);
+                const scalar& fvol = m_fluid_vol(pidx);
+                const Vector3s& fm = m_fluid_m.segment<3>(pidx * 4);
+                const Vector3s& v = m_v.segment<3>(pidx * 4);
+                const Vector3s& fluidv = m_fluid_v.segment<3>(pidx * 4);
+                const Vector3s& pos = m_x.segment<3>(pidx * 4);
+                const VectorXs& fluid_scalar_coeff = m_fluid_scalar_coeff_z.segment(pidx * modes, modes);
+                const VectorXs& scalar_coeff = m_scalar_coeff_z.segment(pidx * modes, modes);
+
+                if (!isFluid(pidx)) {
+                    PolyPICHelper polyPIC(np, pos, dx, scalar_coeff);
+
+                    p += (m(2) + fm(2)) * weights(pair.second, 2) * polyPIC.Contribution(modes);
+                    mass += (m(2) + fm(2)) * weights(pair.second, 2);
+
+                    if (m_particle_to_surfel[pidx] < 0) {
+                        vol_solid +=
+                            vol * m_rest_volume_fraction(pidx) * weights(pair.second, 2);
+                        vol_fluid_elasto += fvol * weights(pair.second, 2);
+                        shape_factor += m_shape_factor(pidx) * weights(pair.second, 2);
+                        shape_factor_rw += weights(pair.second, 2);
+                        orientation +=
+                            m_orientation.segment<3>(pidx * 3) * weights(pair.second, 2);
+                    }
+                }
+                else {
+                    PolyPICHelper polyPIC(np, pos, dx, fluid_scalar_coeff);
+
+                    p_fluid += fm(2) * weights(pair.second, 2) * polyPIC.Contribution(modes);
+                    mass_fluid += fm(2) * weights(pair.second, 2);
+                    vol_fluid += fvol * weights(pair.second, 2);
+                }
+            }
+
+            if (mass > 1e-20) {
+                m_node_vel_z[bucket_idx](i) = p / mass;
+            }
+
+            if (mass_fluid > 1e-20) {
+                m_node_vel_fluid_z[bucket_idx](i) = p_fluid / mass_fluid;
+            }
+
+            if (shape_factor_rw > 1e-20) {
+                shape_factor /= shape_factor_rw;
+            }
+
+            m_node_mass_z[bucket_idx](i) = mass;
+            m_node_vol_z[bucket_idx](i) = vol_solid + vol_fluid_elasto;
+
+            m_node_mass_fluid_z[bucket_idx](i) = mass_fluid;
+            m_node_vol_fluid_z[bucket_idx](i) = vol_fluid;
+
+            m_node_psi_z[bucket_idx](i) = mathutils::clamp(vol_solid / dV, 0.0, 1.0);
+            m_node_sat_z[bucket_idx](i) = mathutils::clamp(
+                (vol_fluid + vol_fluid_elasto) / std::max(1e-20, dV - vol_solid), 0.0,
+                1.0);
+
+            const scalar lo = orientation.norm();
+            if (lo > 1e-20) {
+                orientation /= lo;
+            }
+            m_node_orientation_z[bucket_idx].segment<3>(i * 3) = orientation;
+            m_node_shape_factor_z[bucket_idx](i) = shape_factor;
+        }
+
+        assert(!std::isnan(m_node_vel_z[bucket_idx].sum()));
+        assert(!std::isnan(m_node_mass_fluid_z[bucket_idx].sum()));
+        assert(!std::isnan(m_node_vol_fluid_z[bucket_idx].sum()));
+        });
 }
 
 /*
@@ -7563,7 +7923,160 @@ void TwoDScene::mapNodeParticlesPIC()
 
 void TwoDScene::mapNodeParticlesPolyPIC()
 {
+    const int num_part = getNumParticles();
 
+    const scalar dx = getCellSize();
+
+    const int modes = m_liquid_info.scalar_modes;
+
+    threadutils::for_each(0, num_part, [&](int pidx) {
+        if (m_particle_to_surfel[pidx] >= 0 || isOutsideFluid(pidx)) return;
+
+        auto& indices_x = m_particle_nodes_x[pidx];
+        auto& indices_y = m_particle_nodes_y[pidx];
+        auto& indices_z = m_particle_nodes_z[pidx];
+
+        auto& weights = m_particle_weights[pidx];
+        const Vector3s& pos = m_x.segment<3>(pidx * 4);
+
+        m_v.segment<3>(pidx * 4).setZero();
+
+        m_fluid_v.segment<4>(pidx * 4).setZero();
+
+        m_scalar_coeff_x.segment(pidx * modes, modes).setZero();
+        m_scalar_coeff_y.segment(pidx * modes, modes).setZero();
+        m_scalar_coeff_z.segment(pidx * modes, modes).setZero();
+        m_fluid_scalar_coeff_x.segment(pidx * modes, modes).setZero();
+        m_fluid_scalar_coeff_y.segment(pidx * modes, modes).setZero();
+        m_fluid_scalar_coeff_z.segment(pidx * modes, modes).setZero();
+
+        bool is_fluid = isFluid(pidx);
+
+        if (is_fluid) {
+            Vector3s fv = Vector3s::Zero();
+
+            for (int i = 0; i < indices_x.rows(); ++i) {
+                const int node_bucket_idx = indices_x(i, 0);
+                if (!m_bucket_activated[node_bucket_idx]) continue;
+
+                const int node_idx = indices_x(i, 1);
+
+                scalar fnv = m_node_vel_fluid_x[node_bucket_idx](node_idx);
+
+                Vector3s np = getNodePosX(node_bucket_idx, node_idx);
+
+                fv(0) += fnv * weights(i, 0);
+
+                PolyPICHelper polyPIC(np, pos, dx);
+                const VectorXs coeffs = polyPIC.CalculateCoefficients(modes, fnv, weights.row(i), i);
+
+                m_fluid_scalar_coeff_x.segment(pidx * modes, modes) += coeffs;
+            }
+
+            for (int i = 0; i < indices_y.rows(); ++i) {
+                const int node_bucket_idx = indices_y(i, 0);
+                if (!m_bucket_activated[node_bucket_idx]) continue;
+
+                const int node_idx = indices_y(i, 1);
+
+                scalar fnv = m_node_vel_fluid_y[node_bucket_idx](node_idx);
+
+                Vector3s np = getNodePosY(node_bucket_idx, node_idx);
+
+                fv(1) += fnv * weights(i, 1);
+
+                PolyPICHelper polyPIC(np, pos, dx);
+                const VectorXs coeffs = polyPIC.CalculateCoefficients(modes, fnv, weights.row(i), i);
+
+                m_fluid_scalar_coeff_y.segment(pidx * modes, modes) += coeffs;
+            }
+
+            for (int i = 0; i < indices_z.rows(); ++i) {
+                const int node_bucket_idx = indices_z(i, 0);
+                if (!m_bucket_activated[node_bucket_idx]) continue;
+
+                const int node_idx = indices_z(i, 1);
+
+                scalar fnv = m_node_vel_fluid_z[node_bucket_idx](node_idx);
+
+                Vector3s np = getNodePosZ(node_bucket_idx, node_idx);
+
+                fv(2) += fnv * weights(i, 2);
+
+                PolyPICHelper polyPIC(np, pos, dx);
+                const VectorXs coeffs = polyPIC.CalculateCoefficients(modes, fnv, weights.row(i), i);
+
+                m_fluid_scalar_coeff_z.segment(pidx * modes, modes) += coeffs;
+            }
+
+            m_fluid_v.segment<3>(pidx * 4) = fv;
+            m_fluid_v(pidx * 4 + 3) = 0.0;
+
+            assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_fluid_scalar_coeff_x.segment(pidx * modes, modes).sum()));
+            assert(!std::isnan(m_fluid_scalar_coeff_y.segment(pidx * modes, modes).sum()));
+            assert(!std::isnan(m_fluid_scalar_coeff_z.segment(pidx * modes, modes).sum()));
+        }
+        else {
+            for (int i = 0; i < indices_x.rows(); ++i) {
+                const int node_bucket_idx = indices_x(i, 0);
+                if (!m_bucket_activated[node_bucket_idx]) continue;
+
+                const int node_idx = indices_x(i, 1);
+
+                const Vector3s& np = getNodePosX(node_bucket_idx, node_idx);
+                const scalar& nv = m_node_vel_x[node_bucket_idx](node_idx);
+
+                m_v(pidx * 4 + 0) += nv * weights(i, 0);
+
+                PolyPICHelper polyPIC(np, pos, dx);
+                const VectorXs coeffs = polyPIC.CalculateCoefficients(modes, nv, weights.row(i), i);
+
+                m_scalar_coeff_x.segment(pidx * modes, modes) += coeffs;
+            }
+
+            for (int i = 0; i < indices_y.rows(); ++i) {
+                const int node_bucket_idx = indices_y(i, 0);
+                if (!m_bucket_activated[node_bucket_idx]) continue;
+
+                const int node_idx = indices_y(i, 1);
+
+                const Vector3s& np = getNodePosY(node_bucket_idx, node_idx);
+                const scalar& nv = m_node_vel_y[node_bucket_idx](node_idx);
+
+                m_v(pidx * 4 + 1) += nv * weights(i, 1);
+
+                PolyPICHelper polyPIC(np, pos, dx);
+                const VectorXs coeffs = polyPIC.CalculateCoefficients(modes, nv, weights.row(i), i);
+
+                m_scalar_coeff_y.segment(pidx* modes, modes) += coeffs;
+            }
+
+            for (int i = 0; i < indices_z.rows(); ++i) {
+                const int node_bucket_idx = indices_z(i, 0);
+                if (!m_bucket_activated[node_bucket_idx]) continue;
+
+                const int node_idx = indices_z(i, 1);
+
+                const Vector3s& np = getNodePosZ(node_bucket_idx, node_idx);
+                const scalar& nv = m_node_vel_z[node_bucket_idx](node_idx);
+
+                m_v(pidx * 4 + 2) += nv * weights(i, 2);
+
+                PolyPICHelper polyPIC(np, pos, dx);
+                const VectorXs coeffs = polyPIC.CalculateCoefficients(modes, nv, weights.row(i), i);
+
+                m_scalar_coeff_z.segment(pidx* modes, modes) += coeffs;
+            }
+
+            m_v.segment<4>(pidx * 4) *= m_liquid_info.elasto_advect_coeff;
+
+            assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
+            assert(!std::isnan(m_scalar_coeff_x.segment(pidx* modes, modes).sum()));
+            assert(!std::isnan(m_scalar_coeff_y.segment(pidx* modes, modes).sum()));
+            assert(!std::isnan(m_scalar_coeff_z.segment(pidx* modes, modes).sum()));
+        }
+        });
 }
 
 /*
