@@ -1902,7 +1902,7 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.levelset_thickness = 0.25;
   info.iteration_print_step = 0;
   info.elasto_capture_rate = 1.0;
-  info.scalar_modes = 8;
+  info.scalar_modes = 0;
 
   rapidxml::xml_node<>* nd = node->first_node("liquidinfo");
   if (nd) {
