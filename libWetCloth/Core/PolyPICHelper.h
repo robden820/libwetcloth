@@ -7,13 +7,13 @@
 class PolyPICHelper
 {
 public:
-	PolyPICHelper(const Vector3s& node_pos = Vector3s(0), const Vector3s& particle_pos = Vector3s(0), const scalar delta_x = 1.0, const VectorXs& coefficients = VectorXs(0));
+	PolyPICHelper(const Vector3s& node_pos = Vector3s(0), const Vector3s& particle_pos = Vector3s(0), const scalar delta_x = 1.0);
 	~PolyPICHelper() = default;
 
-	void UpdateValues(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x, const VectorXs& coefficients = VectorXs(0));
+	void UpdateValues(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x);
 
-	const scalar Contribution(const int scalar_modes);
-	VectorXs CalculateCoefficients(const int scalar_modes, const scalar velocity, const VectorXs& weights, const int idx); // Coefficient for the single node, to be summed over all contributing nodes.
+	const scalar Contribution(const int scalar_modes, const VectorXs& coefficients);
+	VectorXs CalculateNodeCoefficients(const int scalar_modes, const scalar velocity, const int idx); // Coefficient for the single node, to be summed over all contributing nodes.
 
 private:
 
@@ -27,8 +27,11 @@ private:
 	std::vector<scalar> m_scalar_modes;
 	std::vector<scalar> m_coefficient_scale;
 
+	scalar m_inv_delta_x;
 	scalar m_delta_x_sqr;
 	scalar m_inv_delta_x_sqr;
+
+	Vector3s m_diff;
 
 	scalar m_x0;
 	scalar m_x1;
@@ -37,8 +40,6 @@ private:
 	scalar m_g0;
 	scalar m_g1;
 	scalar m_g2;
-
-	VectorXs m_coefficients;
 };
 
 #endif

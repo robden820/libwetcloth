@@ -1,10 +1,11 @@
 #include "PolyPICHelper.h"
+#include "MathUtilities.h"
 
-PolyPICHelper::PolyPICHelper(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x, const VectorXs& coefficients)
-	: m_delta_x_sqr(delta_x* delta_x), m_inv_delta_x_sqr(1.0 / m_delta_x_sqr),
-	m_x0(node_pos.x() - particle_pos.x()), m_x1(node_pos.y() - particle_pos.y()), m_x2(node_pos.z() - particle_pos.z()),
-	m_g0(G(node_pos.x(),particle_pos.x())), m_g1(G(node_pos.y(),particle_pos.y())), m_g2(G(node_pos.z(),particle_pos.z())),
-	m_coefficients(coefficients)
+PolyPICHelper::PolyPICHelper(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x)
+	: m_inv_delta_x(1.0 / delta_x), m_delta_x_sqr(delta_x * delta_x), m_inv_delta_x_sqr(m_inv_delta_x * m_inv_delta_x),
+	m_diff(node_pos - particle_pos),
+	m_x0(m_diff.x()), m_x1(m_diff.y()), m_x2(m_diff.z()),
+	m_g0(G(node_pos.x(),particle_pos.x())), m_g1(G(node_pos.y(),particle_pos.y())), m_g2(G(node_pos.z(),particle_pos.z()))
 {
 	m_scalar_modes.resize(27);
 	m_coefficient_scale.resize(27);
@@ -13,20 +14,30 @@ PolyPICHelper::PolyPICHelper(const Vector3s& node_pos, const Vector3s& particle_
 	CalculateCoefficientScales();
 }
 
-void PolyPICHelper::UpdateValues(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x, const VectorXs& coefficients)
+void PolyPICHelper::UpdateValues(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x)
 {
-	m_x0 = node_pos.x() - particle_pos.x();
-	m_x1 = node_pos.y() - particle_pos.y();
-	m_x2 = node_pos.z() - particle_pos.z();
+	assert(delta_x != 0.0);
 
-	m_g0 = G(node_pos.x() - particle_pos.x(), 0);
-	m_g1 = G(node_pos.y() - particle_pos.y(), 1);
-	m_g2 = G(node_pos.z() - particle_pos.z(), 2);
+	if (delta_x * delta_x != m_delta_x_sqr)
+	{
+		m_inv_delta_x = 1.0 / delta_x;
+		m_delta_x_sqr = delta_x * delta_x;
+		m_inv_delta_x_sqr = m_inv_delta_x * m_inv_delta_x;
 
-	m_coefficients = coefficients;
+		CalculateCoefficientScales();
+	}
+
+	m_diff = (node_pos - particle_pos);
+
+	m_x0 = m_diff.x();
+	m_x1 = m_diff.y();
+	m_x2 = m_diff.z();
+
+	m_g0 = G(m_x0, 0);
+	m_g1 = G(m_x1, 1);
+	m_g2 = G(m_x2, 2);
 
 	CalculateScalarModes();
-	CalculateCoefficientScales();
 }
 
 void PolyPICHelper::CalculateScalarModes()
@@ -94,30 +105,30 @@ void PolyPICHelper::CalculateCoefficientScales()
 	m_coefficient_scale[26] = inv_delta_x_pow_6;
 }
 
-const scalar PolyPICHelper::Contribution(const int scalar_modes)
+const scalar PolyPICHelper::Contribution(const int scalar_modes, const VectorXs& coefficients)
 {
-	assert(scalar_modes >= 0 && scalar_modes < 27);
+	assert(scalar_modes > 0 && scalar_modes < 27);
+	assert(coefficients.size() >= scalar_modes);
 
 	scalar mode_sum = 0.0;
 
 	for (int mode = 0; mode < scalar_modes; mode++)
 	{
-		mode_sum += m_scalar_modes[mode] * m_coefficients[mode];
+		mode_sum += m_scalar_modes[mode] * coefficients[mode];
 	}
 
 	return mode_sum;
 }
 
-VectorXs PolyPICHelper::CalculateCoefficients(const int scalar_modes, const scalar velocity, const VectorXs& weights, const int idx)
+VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const scalar velocity, const int idx)
 {
-	VectorXs coeffs(27);
-	
-	const scalar weight_0 = weights[0]; // weight for x axis interpolation.
-	const scalar weight_1 = weights[1]; // y axis.
-	const scalar weight_2 = weights[2]; // z axis.
+	VectorXs coefficients(27);
+
+	const scalar weight_0 = mathutils::quad_kernel(m_x0 * m_inv_delta_x); // weight for x axis interpolation.
+	const scalar weight_1 = mathutils::quad_kernel(m_x1 * m_inv_delta_x); // y axis.
+	const scalar weight_2 = mathutils::quad_kernel(m_x2 * m_inv_delta_x); // z axis.
 	const scalar weight = weight_0 * weight_1 * weight_2;
 
-	// TODO: what values should these variables take?
 	const int exp_0 = std::fmod(idx, 3.0);
 	const int exp_1 = std::fmod(std::floor(idx / 3.0), 3.0);
 	const int exp_2 = std::fmod(std::floor(idx / 9.0), 3.0);
@@ -126,40 +137,40 @@ VectorXs PolyPICHelper::CalculateCoefficients(const int scalar_modes, const scal
 	const scalar two_pow_1 = std::pow(-2, exp_1 - 1 % 2);
 	const scalar two_pow_2 = std::pow(-2, exp_2 - 1 % 2);
 
-	coeffs[0] = weight;
-	coeffs[1] = weight * m_x0;
-	coeffs[2] = weight * m_x1;
-	coeffs[3] = weight * m_x2;
-	coeffs[4] = weight * m_x0 * m_x1;
-	coeffs[5] = weight * m_x1 * m_x2;
-	coeffs[6] = weight * m_x0 * m_x2;
-	coeffs[7] = weight * m_x0 * m_x1 * m_x2;
-	coeffs[8] = weight_1 * weight_2 * two_pow_0;
-	coeffs[9] = weight_0 * weight_2 * two_pow_1;
-	coeffs[10] = weight_0 * weight_1 * two_pow_2;
-	coeffs[11] = weight_2 * two_pow_0 * two_pow_1;
-	coeffs[12] = weight_1 * two_pow_0 * two_pow_2;
-	coeffs[13] = weight_0 * two_pow_1 * two_pow_2;
-	coeffs[14] = two_pow_0 * two_pow_1 * two_pow_2;
-	coeffs[15] = weight_1 * weight_2 * m_x1 * two_pow_0;
-	coeffs[16] = weight_1 * weight_2 * m_x2 * two_pow_0;
-	coeffs[17] = weight_1 * weight_2 * m_x1 * m_x2 * two_pow_0;
-	coeffs[18] = weight_0 * weight_2 * m_x0 * two_pow_1;
-	coeffs[19] = weight_0 * weight_2 * m_x2 * two_pow_1;
-	coeffs[20] = weight_0 * weight_2 * m_x0 * m_x2 * two_pow_1;
-	coeffs[21] = weight_0 * weight_1 * m_x0 * two_pow_2;
-	coeffs[22] = weight_0 * weight_1 * m_x1 * two_pow_2;
-	coeffs[23] = weight_0 * weight_1 * m_x0 * m_x1 * two_pow_2;
-	coeffs[24] = weight_2 * m_x2 * two_pow_0 * two_pow_1;
-	coeffs[25] = weight_1 * m_x1 * two_pow_0 * two_pow_2;
-	coeffs[26] = weight_0 * m_x0 * two_pow_1 * two_pow_2;
+	coefficients[0] = weight;
+	coefficients[1] = weight * m_x0;
+	coefficients[2] = weight * m_x1;
+	coefficients[3] = weight * m_x2;
+	coefficients[4] = weight * m_x0 * m_x1;
+	coefficients[5] = weight * m_x1 * m_x2;
+	coefficients[6] = weight * m_x0 * m_x2;
+	coefficients[7] = weight * m_x0 * m_x1 * m_x2;
+	coefficients[8] = weight_1 * weight_2 * two_pow_0;
+	coefficients[9] = weight_0 * weight_2 * two_pow_1;
+	coefficients[10] = weight_0 * weight_1 * two_pow_2;
+	coefficients[11] = weight_2 * two_pow_0 * two_pow_1;
+	coefficients[12] = weight_1 * two_pow_0 * two_pow_2;
+	coefficients[13] = weight_0 * two_pow_1 * two_pow_2;
+	coefficients[14] = two_pow_0 * two_pow_1 * two_pow_2;
+	coefficients[15] = weight_1 * weight_2 * m_x1 * two_pow_0;
+	coefficients[16] = weight_1 * weight_2 * m_x2 * two_pow_0;
+	coefficients[17] = weight_1 * weight_2 * m_x1 * m_x2 * two_pow_0;
+	coefficients[18] = weight_0 * weight_2 * m_x0 * two_pow_1;
+	coefficients[19] = weight_0 * weight_2 * m_x2 * two_pow_1;
+	coefficients[20] = weight_0 * weight_2 * m_x0 * m_x2 * two_pow_1;
+	coefficients[21] = weight_0 * weight_1 * m_x0 * two_pow_2;
+	coefficients[22] = weight_0 * weight_1 * m_x1 * two_pow_2;
+	coefficients[23] = weight_0 * weight_1 * m_x0 * m_x1 * two_pow_2;
+	coefficients[24] = weight_2 * m_x2 * two_pow_0 * two_pow_1;
+	coefficients[25] = weight_1 * m_x1 * two_pow_0 * two_pow_2;
+	coefficients[26] = weight_0 * m_x0 * two_pow_1 * two_pow_2;
 	
-	for (unsigned int i = 0; i < scalar_modes; i++)
+	for (unsigned int i = 0; i < 27; i++)
 	{
-		coeffs[i] *= m_coefficient_scale[i];
+		coefficients[i] *= m_coefficient_scale[i] * velocity;
 	}
 	
-	return coeffs.segment(0, scalar_modes) * velocity;
+	return coefficients.segment(0, scalar_modes);
 }
 
 const scalar PolyPICHelper::ScalarMode(const int scalar_mode_idx)
