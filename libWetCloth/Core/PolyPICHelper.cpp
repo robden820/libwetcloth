@@ -2,40 +2,11 @@
 #include "MathUtilities.h"
 
 PolyPICHelper::PolyPICHelper(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x)
-	: m_inv_delta_x(1.0 / delta_x), m_delta_x_sqr(delta_x * delta_x), m_inv_delta_x_sqr(m_inv_delta_x * m_inv_delta_x),
-	m_diff(node_pos - particle_pos),
-	m_x0(m_diff.x()), m_x1(m_diff.y()), m_x2(m_diff.z()),
-	m_g0(G(node_pos.x(),particle_pos.x())), m_g1(G(node_pos.y(),particle_pos.y())), m_g2(G(node_pos.z(),particle_pos.z()))
+	: m_delta_x_sqr(delta_x * delta_x), m_inv_delta_x(1 / delta_x), m_inv_delta_x_sqr(m_inv_delta_x * m_inv_delta_x),
+	m_x0(node_pos.x() - particle_pos.x()), m_x1(node_pos.y() - particle_pos.y()), m_x2(node_pos.z() - particle_pos.z()),
+	m_g0(G(node_pos.x(), particle_pos.x())), m_g1(G(node_pos.y(), particle_pos.y())), m_g2(G(node_pos.z(), particle_pos.z()))
 {
 	m_scalar_modes.resize(27);
-	m_coefficient_scale.resize(27);
-
-	CalculateScalarModes();
-	CalculateCoefficientScales();
-}
-
-void PolyPICHelper::UpdateValues(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x)
-{
-	assert(delta_x != 0.0);
-
-	if (delta_x * delta_x != m_delta_x_sqr)
-	{
-		m_inv_delta_x = 1.0 / delta_x;
-		m_delta_x_sqr = delta_x * delta_x;
-		m_inv_delta_x_sqr = m_inv_delta_x * m_inv_delta_x;
-
-		CalculateCoefficientScales();
-	}
-
-	m_diff = (node_pos - particle_pos);
-
-	m_x0 = m_diff.x();
-	m_x1 = m_diff.y();
-	m_x2 = m_diff.z();
-
-	m_g0 = G(m_x0, 0);
-	m_g1 = G(m_x1, 1);
-	m_g2 = G(m_x2, 2);
 
 	CalculateScalarModes();
 }
@@ -71,38 +42,43 @@ void PolyPICHelper::CalculateScalarModes()
 	m_scalar_modes[26] = m_g1 * m_g2 * m_x0;
 }
 
-void PolyPICHelper::CalculateCoefficientScales()
+void PolyPICHelper::CalculateCoefficientScales(VectorXs& coefficient_scales)
 {
+	assert(coefficient_scales.size() >= 27);
+
+	// See tech_doc for following constants.
+	// Constants are calculated as 1 / presented_value.
+
 	const scalar inv_delta_x_pow_4 = m_inv_delta_x_sqr * m_inv_delta_x_sqr;
 	const scalar inv_delta_x_pow_6 = inv_delta_x_pow_4 * m_inv_delta_x_sqr;
 
-	m_coefficient_scale[0] = 1;
-	m_coefficient_scale[1] = m_inv_delta_x_sqr * 4;
-	m_coefficient_scale[2] = m_inv_delta_x_sqr * 4;
-	m_coefficient_scale[3] = m_inv_delta_x_sqr * 4;
-	m_coefficient_scale[4] = inv_delta_x_pow_4 * 16;
-	m_coefficient_scale[5] = inv_delta_x_pow_4 * 16;
-	m_coefficient_scale[6] = inv_delta_x_pow_4 * 16;
-	m_coefficient_scale[7] = inv_delta_x_pow_6 * 64;
-	m_coefficient_scale[8] = m_inv_delta_x_sqr * 0.5;
-	m_coefficient_scale[9] = m_inv_delta_x_sqr * 0.5;
-	m_coefficient_scale[10] = m_inv_delta_x_sqr * 0.5;
-	m_coefficient_scale[11] = inv_delta_x_pow_4 * 0.25;
-	m_coefficient_scale[12] = inv_delta_x_pow_4 * 0.25;
-	m_coefficient_scale[13] = inv_delta_x_pow_4 * 0.25;
-	m_coefficient_scale[14] = inv_delta_x_pow_6 * 0.125;
-	m_coefficient_scale[15] = inv_delta_x_pow_4 * 2;
-	m_coefficient_scale[16] = inv_delta_x_pow_4 * 2;
-	m_coefficient_scale[17] = inv_delta_x_pow_6 * 8;
-	m_coefficient_scale[18] = inv_delta_x_pow_4 * 2;
-	m_coefficient_scale[19] = inv_delta_x_pow_4 * 2;
-	m_coefficient_scale[20] = inv_delta_x_pow_6 * 8;
-	m_coefficient_scale[21] = inv_delta_x_pow_4 * 2;
-	m_coefficient_scale[22] = inv_delta_x_pow_4 * 2;
-	m_coefficient_scale[23] = inv_delta_x_pow_6 * 8;
-	m_coefficient_scale[24] = inv_delta_x_pow_6;
-	m_coefficient_scale[25] = inv_delta_x_pow_6;
-	m_coefficient_scale[26] = inv_delta_x_pow_6;
+	coefficient_scales[0] = 1;
+	coefficient_scales[1] = m_inv_delta_x_sqr * 4;
+	coefficient_scales[2] = m_inv_delta_x_sqr * 4;
+	coefficient_scales[3] = m_inv_delta_x_sqr * 4;
+	coefficient_scales[4] = inv_delta_x_pow_4 * 16;
+	coefficient_scales[5] = inv_delta_x_pow_4 * 16;
+	coefficient_scales[6] = inv_delta_x_pow_4 * 16;
+	coefficient_scales[7] = inv_delta_x_pow_6 * 64;
+	coefficient_scales[8] = m_inv_delta_x_sqr * 0.5;
+	coefficient_scales[9] = m_inv_delta_x_sqr * 0.5;
+	coefficient_scales[10] = m_inv_delta_x_sqr * 0.5;
+	coefficient_scales[11] = inv_delta_x_pow_4 * 0.25;
+	coefficient_scales[12] = inv_delta_x_pow_4 * 0.25;
+	coefficient_scales[13] = inv_delta_x_pow_4 * 0.25;
+	coefficient_scales[14] = inv_delta_x_pow_6 * 0.125;
+	coefficient_scales[15] = inv_delta_x_pow_4 * 2;
+	coefficient_scales[16] = inv_delta_x_pow_4 * 2;
+	coefficient_scales[17] = inv_delta_x_pow_6 * 8;
+	coefficient_scales[18] = inv_delta_x_pow_4 * 2;
+	coefficient_scales[19] = inv_delta_x_pow_4 * 2;
+	coefficient_scales[20] = inv_delta_x_pow_6 * 8;
+	coefficient_scales[21] = inv_delta_x_pow_4 * 2;
+	coefficient_scales[22] = inv_delta_x_pow_4 * 2;
+	coefficient_scales[23] = inv_delta_x_pow_6 * 8;
+	coefficient_scales[24] = inv_delta_x_pow_6;
+	coefficient_scales[25] = inv_delta_x_pow_6;
+	coefficient_scales[26] = inv_delta_x_pow_6;
 }
 
 const scalar PolyPICHelper::Contribution(const int scalar_modes, const VectorXs& coefficients)
@@ -122,7 +98,13 @@ const scalar PolyPICHelper::Contribution(const int scalar_modes, const VectorXs&
 
 VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const scalar velocity, const int idx)
 {
+	assert(scalar_mode_idx >= 0 && scalar_mode_idx < 27);
+	assert(idx >= 0 && idx < 27);
+
 	VectorXs coefficients(27);
+	VectorXs coefficient_scales(27);
+
+	CalculateCoefficientScales(coefficient_scales);
 
 	const scalar weight_0 = mathutils::quad_kernel(m_x0 * m_inv_delta_x); // weight for x axis interpolation.
 	const scalar weight_1 = mathutils::quad_kernel(m_x1 * m_inv_delta_x); // y axis.
@@ -133,9 +115,9 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	const int exp_1 = std::fmod(std::floor(idx / 3.0), 3.0);
 	const int exp_2 = std::fmod(std::floor(idx / 9.0), 3.0);
 
-	const scalar two_pow_0 = std::pow(-2, exp_0 - 1 % 2);
-	const scalar two_pow_1 = std::pow(-2, exp_1 - 1 % 2);
-	const scalar two_pow_2 = std::pow(-2, exp_2 - 1 % 2);
+	const scalar two_pow_0 = std::pow(-2.0, exp_0 % 2);
+	const scalar two_pow_1 = std::pow(-2.0, exp_1 % 2);
+	const scalar two_pow_2 = std::pow(-2.0, exp_2 % 2);
 
 	coefficients[0] = weight;
 	coefficients[1] = weight * m_x0;
@@ -165,9 +147,9 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	coefficients[25] = weight_1 * m_x1 * two_pow_0 * two_pow_2;
 	coefficients[26] = weight_0 * m_x0 * two_pow_1 * two_pow_2;
 	
-	for (unsigned int i = 0; i < 27; i++)
+	for (unsigned int i = 0; i < scalar_modes; i++)
 	{
-		coefficients[i] *= m_coefficient_scale[i] * velocity;
+		coefficients[i] *= coefficient_scales[i] * velocity;
 	}
 	
 	return coefficients.segment(0, scalar_modes);
@@ -183,9 +165,10 @@ const scalar PolyPICHelper::ScalarMode(const int scalar_mode_idx)
 const scalar PolyPICHelper::G(const scalar node_pos, const scalar particle_pos)
 {
 	const scalar diff = node_pos - particle_pos;
+	const scalar p = -particle_pos + node_pos;
 
 	const scalar a = diff * diff;
-	const scalar b = (particle_pos * (m_delta_x_sqr - 4 * particle_pos * particle_pos) * diff) * m_inv_delta_x_sqr;
+	const scalar b = (p * (m_delta_x_sqr - 4.0 * p * p) * diff) * m_inv_delta_x_sqr;
 	const scalar c = m_delta_x_sqr * 0.25;
 
 	return a - b - c;
