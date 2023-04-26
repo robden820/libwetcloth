@@ -2586,7 +2586,15 @@ void TwoDSceneXMLParser::loadLiquidInfo(
             std::cerr << outputmod::startred
                 << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
                 << " Failed to parse value of scalarModes attribute for "
-                "LiquidInfo. Value must be integer. Exiting."
+                "LiquidInfo. Value must be integer in range [1,27]. Exiting."
+                << std::endl;
+            exit(1);
+        }
+        if (info.scalar_modes < 1 || info.scalar_modes > 27)
+        {
+            std::cerr << outputmod::startred
+                << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+                << "Value of 'scalar_modes' must be int [1,27]. Exiting."
                 << std::endl;
             exit(1);
         }
