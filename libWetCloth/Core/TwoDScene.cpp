@@ -819,20 +819,13 @@ void TwoDScene::conservativeResizeParticles(int num_particles) {
 
   m_B.conservativeResize(num_particles * 3, 3);
   m_fB.conservativeResize(num_particles * 3, 3);
-
+  
   m_scalar_coeff_x.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_scalar_coeff_y.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_scalar_coeff_z.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_fluid_scalar_coeff_x.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_fluid_scalar_coeff_y.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_fluid_scalar_coeff_z.conservativeResize(num_particles * m_liquid_info.scalar_modes);
-
-  m_fluid_scalar_coeff_x.setZero();
-  m_fluid_scalar_coeff_y.setZero();
-  m_fluid_scalar_coeff_z.setZero();
-  m_scalar_coeff_x.setZero();
-  m_scalar_coeff_y.setZero();
-  m_scalar_coeff_z.setZero();
 
   m_particle_nodes_x.resize(num_particles);
   m_particle_nodes_y.resize(num_particles);
@@ -2495,12 +2488,12 @@ void TwoDScene::splitLiquidParticles() {
       m_shape_factor(pidx) = 0.0;
       m_orientation.segment<3>(pidx * 3).setZero();
 
-      m_scalar_coeff_x.segment(pidx * modes, modes) = m_scalar_coeff_x.segment(pidx_parent * modes, modes);
-      m_scalar_coeff_y.segment(pidx * modes, modes) = m_scalar_coeff_y.segment(pidx_parent * modes, modes);
-      m_scalar_coeff_z.segment(pidx * modes, modes) = m_scalar_coeff_z.segment(pidx_parent * modes, modes);
-      m_fluid_scalar_coeff_x.segment(pidx * modes, modes) = m_fluid_scalar_coeff_x.segment(pidx_parent * modes, modes);
-      m_fluid_scalar_coeff_y.segment(pidx * modes, modes) = m_fluid_scalar_coeff_y.segment(pidx_parent * modes, modes);
-      m_fluid_scalar_coeff_z.segment(pidx * modes, modes) = m_fluid_scalar_coeff_z.segment(pidx_parent * modes, modes);
+      m_scalar_coeff_x.segment(pidx * modes, modes).setZero();
+      m_scalar_coeff_y.segment(pidx * modes, modes).setZero();
+      m_scalar_coeff_z.segment(pidx * modes, modes).setZero();
+      m_fluid_scalar_coeff_x.segment(pidx * modes, modes).setZero();
+      m_fluid_scalar_coeff_y.segment(pidx * modes, modes).setZero();
+      m_fluid_scalar_coeff_z.segment(pidx * modes, modes).setZero();
 
       const int fidx = fidx_new_parts + i;
       m_fluids[fidx] = pidx;
@@ -7960,13 +7953,9 @@ void TwoDScene::mapNodeParticlesPolyPIC()
         if (is_fluid) {
             Vector3s fv = Vector3s::Zero();
             
-            VectorXs fluid_coeffs_X(modes);
-            VectorXs fluid_coeffs_Y(modes);
-            VectorXs fluid_coeffs_Z(modes);
-
-            fluid_coeffs_X.setZero();
-            fluid_coeffs_Y.setZero();
-            fluid_coeffs_Z.setZero();
+            VectorXs fluid_coeffs_X = VectorXs::Zero(modes);
+            VectorXs fluid_coeffs_Y = VectorXs::Zero(modes);
+            VectorXs fluid_coeffs_Z = VectorXs::Zero(modes);
 
             for (int i = 0; i < indices_x.rows(); ++i) {
                 const int node_bucket_idx = indices_x(i, 0);
@@ -8018,11 +8007,11 @@ void TwoDScene::mapNodeParticlesPolyPIC()
             
             m_fluid_v.segment<3>(pidx * 4) = fv;
             m_fluid_v(pidx * 4 + 3) = 0.0;
-
+            
             m_fluid_scalar_coeff_x.segment(pidx * modes, modes) = fluid_coeffs_X;
             m_fluid_scalar_coeff_y.segment(pidx * modes, modes) = fluid_coeffs_Y;
             m_fluid_scalar_coeff_z.segment(pidx * modes, modes) = fluid_coeffs_Z;
-
+            
             assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
             assert(!std::isnan(m_fluid_scalar_coeff_x.segment(pidx * modes, modes).sum()));
             assert(!std::isnan(m_fluid_scalar_coeff_y.segment(pidx * modes, modes).sum()));
