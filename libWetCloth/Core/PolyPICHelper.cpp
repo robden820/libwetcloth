@@ -83,7 +83,7 @@ void PolyPICHelper::CalculateCoefficientScales(VectorXs& coefficient_scales)
 
 const scalar PolyPICHelper::Contribution(const int scalar_modes, const VectorXs& coefficients)
 {
-	assert(scalar_modes > 0 && scalar_modes < 27);
+	assert(scalar_modes > 0 && scalar_modes <= 27);
 	assert(coefficients.size() >= scalar_modes);
 
 	scalar mode_sum = 0.0;
@@ -98,7 +98,7 @@ const scalar PolyPICHelper::Contribution(const int scalar_modes, const VectorXs&
 
 VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const scalar velocity, const int idx)
 {
-	assert(scalar_mode_idx >= 0 && scalar_mode_idx < 27);
+	assert(scalar_modes > 0 && scalar_modes <= 27);
 	assert(idx >= 0 && idx < 27);
 
 	VectorXs coefficients(27);
@@ -153,13 +153,6 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	}
 	
 	return coefficients.segment(0, scalar_modes);
-}
-
-const scalar PolyPICHelper::ScalarMode(const int scalar_mode_idx)
-{
-	assert(scalar_mode_idx >= 0 && scalar_mode_idx < 27);
-
-	return m_scalar_modes[scalar_mode_idx];
 }
 
 const scalar PolyPICHelper::G(const scalar node_pos, const scalar particle_pos)

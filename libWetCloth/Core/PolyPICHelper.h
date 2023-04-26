@@ -20,8 +20,6 @@ private:
 	void CalculateScalarModes();
 	void CalculateCoefficientScales(VectorXs& coefficient_scales);
 
-	const scalar ScalarMode(const int scalar_mode_idx);
-
 	const scalar G(const scalar node_pos, const scalar particle_pos);
 
 	std::vector<scalar> m_scalar_modes;
