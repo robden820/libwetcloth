@@ -169,7 +169,7 @@ void WetClothCore::stepSystem(const scalar& dt) {
     }
     else
     {
-        m_scene->mapParticleNodesPolyPIC();
+        m_scene->mapParticleNodesPolyPIC(dt);
     }
    
     // Save the Grid Velocity
@@ -266,7 +266,7 @@ void WetClothCore::stepSystem(const scalar& dt) {
     }
     else
     {
-        m_scene->mapNodeParticlesPolyPIC();
+        m_scene->mapNodeParticlesPolyPIC(dt);
     }
     
     t1 = timingutils::seconds();

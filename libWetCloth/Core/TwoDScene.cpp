@@ -7269,7 +7269,7 @@ void TwoDScene::mapParticleNodesPIC()
         });
 }
 
-void TwoDScene::mapParticleNodesPolyPIC()
+void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
 {
     const scalar dx = getCellSize();
     const scalar dV = dx * dx * dx;
@@ -7348,10 +7348,16 @@ void TwoDScene::mapParticleNodesPolyPIC()
                 const Vector3s& pos = m_x.segment<3>(pidx * 4);
                 const VectorXs& fluid_scalar_coeff = m_fluid_scalar_coeff_x.segment(pidx * modes, modes);
                 const VectorXs& scalar_coeff = m_scalar_coeff_x.segment(pidx * modes, modes);
+                const Matrix3s& B = m_B.block<3, 3>(pidx * 3, 0);
+                const Matrix3s& fB = m_fB.block<3, 3>(pidx * 3, 0);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                if (!isFluid(pidx))
+                {
+                    const Matrix3s zeta = (Matrix3s::Identity() + dt * B).inverse();
+                    const Vector3s input = zeta * (np - pos);
 
-                if (!isFluid(pidx)) {
+                    PolyPICHelper polyPIC(input, pos - np, dx);
+
                     p += (m(0) + fm(0)) * weights(pair.second, 0) * polyPIC.Contribution(modes, scalar_coeff);
                     mass += (m(0) + fm(0)) * weights(pair.second, 0);
 
@@ -7365,7 +7371,12 @@ void TwoDScene::mapParticleNodesPolyPIC()
                             m_orientation.segment<3>(pidx * 3) * weights(pair.second, 0);
                     }
                 }
-                else { 
+                else {
+                    const Matrix3s zeta = (Matrix3s::Identity() + dt * fB).inverse();
+                    const Vector3s input = zeta * (np - pos);
+
+                    PolyPICHelper polyPIC(input, pos - np, dx);
+
                     p_fluid += fm(0) * weights(pair.second, 0) * polyPIC.Contribution(modes, fluid_scalar_coeff);
                     mass_fluid += fm(0) * weights(pair.second, 0);
                     vol_fluid += fvol * weights(pair.second, 0);
@@ -7437,10 +7448,16 @@ void TwoDScene::mapParticleNodesPolyPIC()
                 const Vector3s& pos = m_x.segment<3>(pidx * 4);
                 const VectorXs& fluid_scalar_coeff = m_fluid_scalar_coeff_y.segment(pidx * modes, modes);
                 const VectorXs& scalar_coeff = m_scalar_coeff_y.segment(pidx * modes, modes);
+                const Matrix3s& B = m_B.block<3, 3>(pidx * 3, 0);
+                const Matrix3s& fB = m_fB.block<3, 3>(pidx * 3, 0);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                if (!isFluid(pidx))
+                {
+                    const Matrix3s zeta = (Matrix3s::Identity() + dt * B).inverse();
+                    const Vector3s input = zeta * (np - pos);
 
-                if (!isFluid(pidx)) {
+                    PolyPICHelper polyPIC(input, pos - np, dx);
+
                     p += (m(1) + fm(1)) * weights(pair.second, 1) * polyPIC.Contribution(modes, scalar_coeff);
                     mass += (m(1) + fm(1)) * weights(pair.second, 1);
 
@@ -7454,7 +7471,13 @@ void TwoDScene::mapParticleNodesPolyPIC()
                             m_orientation.segment<3>(pidx * 3) * weights(pair.second, 1);
                     }
                 }
-                else {
+                else
+                {
+                    const Matrix3s zeta = (Matrix3s::Identity() + dt * fB).inverse();
+                    const Vector3s input = zeta * (np - pos);
+
+                    PolyPICHelper polyPIC(input, pos - np, dx);
+
                     p_fluid += fm(1) * weights(pair.second, 1) * polyPIC.Contribution(modes, fluid_scalar_coeff);
                     mass_fluid += fm(1) * weights(pair.second, 1);
                     vol_fluid += fvol * weights(pair.second, 1);
@@ -7526,10 +7549,16 @@ void TwoDScene::mapParticleNodesPolyPIC()
                 const Vector3s& pos = m_x.segment<3>(pidx * 4);
                 const VectorXs& fluid_scalar_coeff = m_fluid_scalar_coeff_z.segment(pidx * modes, modes);
                 const VectorXs& scalar_coeff = m_scalar_coeff_z.segment(pidx * modes, modes);
+                const Matrix3s& B = m_B.block<3, 3>(pidx * 3, 0);
+                const Matrix3s& fB = m_fB.block<3, 3>(pidx * 3, 0);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                if (!isFluid(pidx))
+                {
+                    const Matrix3s zeta = (Matrix3s::Identity() + dt * B).inverse();
+                    const Vector3s input = zeta * (np - pos);
 
-                if (!isFluid(pidx)) {
+                    PolyPICHelper polyPIC(input, pos - np, dx);
+
                     p += (m(2) + fm(2)) * weights(pair.second, 2) * polyPIC.Contribution(modes, scalar_coeff);
                     mass += (m(2) + fm(2)) * weights(pair.second, 2);
 
@@ -7543,7 +7572,13 @@ void TwoDScene::mapParticleNodesPolyPIC()
                             m_orientation.segment<3>(pidx * 3) * weights(pair.second, 2);
                     }
                 }
-                else {
+                else
+                {
+                    const Matrix3s zeta = (Matrix3s::Identity() + dt * fB).inverse();
+                    const Vector3s input = zeta * (np - pos);
+
+                    PolyPICHelper polyPIC(input, pos - np, dx);
+
                     p_fluid += fm(2) * weights(pair.second, 2) * polyPIC.Contribution(modes, fluid_scalar_coeff);
                     mass_fluid += fm(2) * weights(pair.second, 2);
                     vol_fluid += fvol * weights(pair.second, 2);
@@ -7853,7 +7888,6 @@ void TwoDScene::mapNodeParticlesPIC()
 
             assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
             assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
-
         }
         else
         {
@@ -7919,13 +7953,14 @@ void TwoDScene::mapNodeParticlesPIC()
     });
 }
 
-void TwoDScene::mapNodeParticlesPolyPIC()
+void TwoDScene::mapNodeParticlesPolyPIC(const scalar& dt)
 {
     const int num_part = getNumParticles();
 
     const scalar dx = getCellSize();
 
     const int modes = m_liquid_info.scalar_modes;
+    const scalar invD = getInverseDCoeff();
 
     threadutils::for_each(0, num_part, [&](int pidx) {
         if (m_particle_to_surfel[pidx] >= 0 || isOutsideFluid(pidx)) return;
@@ -7938,8 +7973,10 @@ void TwoDScene::mapNodeParticlesPolyPIC()
         const Vector3s& pos = m_x.segment<3>(pidx * 4);
 
         m_v.segment<3>(pidx * 4).setZero();
-
         m_fluid_v.segment<4>(pidx * 4).setZero();
+
+        m_B.block<3, 3>(pidx * 3, 0).setZero();
+        m_fB.block<3, 3>(pidx * 3, 0).setZero();
 
         m_scalar_coeff_x.segment(pidx * modes, modes).setZero();
         m_scalar_coeff_y.segment(pidx * modes, modes).setZero();
@@ -7956,7 +7993,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
             VectorXs fluid_coeffs_X = VectorXs::Zero(modes);
             VectorXs fluid_coeffs_Y = VectorXs::Zero(modes);
             VectorXs fluid_coeffs_Z = VectorXs::Zero(modes);
-
+            
             for (int i = 0; i < indices_x.rows(); ++i) {
                 const int node_bucket_idx = indices_x(i, 0);
                 if (!m_bucket_activated[node_bucket_idx]) continue;
@@ -7965,9 +8002,13 @@ void TwoDScene::mapNodeParticlesPolyPIC()
 
                 const scalar fnv = m_node_vel_fluid_x[node_bucket_idx](node_idx);
                 const Vector3s np = getNodePosX(node_bucket_idx, node_idx);
-
-                PolyPICHelper polyPIC(np, pos, dx);
+                
+                PolyPICHelper polyPIC(np - pos, pos - np, dx);
                 fluid_coeffs_X += polyPIC.CalculateNodeCoefficients(modes, fnv, i);
+
+                fv(0) += fnv * weights(i, 0);
+
+                m_fB.block<1, 3>(pidx * 3 + 0, 0) += fnv * weights(i, 0) * (np - pos).transpose() * invD;
             }
 
             for (int i = 0; i < indices_y.rows(); ++i) {
@@ -7979,8 +8020,12 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const scalar fnv = m_node_vel_fluid_y[node_bucket_idx](node_idx);
                 const Vector3s np = getNodePosY(node_bucket_idx, node_idx);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                PolyPICHelper polyPIC(np - pos, pos - np, dx);
                 fluid_coeffs_Y += polyPIC.CalculateNodeCoefficients(modes, fnv, i);
+
+                fv(1) += fnv * weights(i, 1);
+
+                m_fB.block<1, 3>(pidx * 3 + 1, 0) += fnv * weights(i, 1) * (np - pos).transpose() * invD;
             }
 
             for (int i = 0; i < indices_z.rows(); ++i) {
@@ -7992,26 +8037,23 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const scalar fnv = m_node_vel_fluid_z[node_bucket_idx](node_idx);
                 const Vector3s np = getNodePosZ(node_bucket_idx, node_idx);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                PolyPICHelper polyPIC(np - pos, pos - np, dx);
                 fluid_coeffs_Z += polyPIC.CalculateNodeCoefficients(modes, fnv, i);
+
+                fv(2) += fnv * weights(i, 2);
+
+                m_fB.block<1, 3>(pidx * 3 + 2, 0) += fnv * weights(i, 2) * (np - pos).transpose() * invD;
             }
 
-            // TO DO: what value for np?
-            const Vector3s np = pos;
-
-            PolyPICHelper polyPIC(np, pos, dx);
-
-            fv(0) = polyPIC.Contribution(modes, fluid_coeffs_X);
-            fv(1) = polyPIC.Contribution(modes, fluid_coeffs_Y);
-            fv(2) = polyPIC.Contribution(modes, fluid_coeffs_Z);
-            
             m_fluid_v.segment<3>(pidx * 4) = fv;
             m_fluid_v(pidx * 4 + 3) = 0.0;
             
             m_fluid_scalar_coeff_x.segment(pidx * modes, modes) = fluid_coeffs_X;
             m_fluid_scalar_coeff_y.segment(pidx * modes, modes) = fluid_coeffs_Y;
             m_fluid_scalar_coeff_z.segment(pidx * modes, modes) = fluid_coeffs_Z;
-            
+
+            m_fB.block<3, 3>(pidx * 3, 0) *= m_liquid_info.flip_coeff;
+
             assert(!std::isnan(m_fluid_v.segment<3>(pidx * 4).sum()));
             assert(!std::isnan(m_fluid_scalar_coeff_x.segment(pidx * modes, modes).sum()));
             assert(!std::isnan(m_fluid_scalar_coeff_y.segment(pidx * modes, modes).sum()));
@@ -8020,13 +8062,9 @@ void TwoDScene::mapNodeParticlesPolyPIC()
         else {
             Vector3s v = Vector3s::Zero();
 
-            VectorXs coeffs_X(modes);
-            VectorXs coeffs_Y(modes);
-            VectorXs coeffs_Z(modes);
-
-            coeffs_X.setZero();
-            coeffs_Y.setZero();
-            coeffs_Z.setZero();
+            VectorXs coeffs_X = VectorXs::Zero(modes);
+            VectorXs coeffs_Y = VectorXs::Zero(modes);
+            VectorXs coeffs_Z = VectorXs::Zero(modes);
 
             for (int i = 0; i < indices_x.rows(); ++i) {
                 const int node_bucket_idx = indices_x(i, 0);
@@ -8037,8 +8075,12 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const Vector3s& np = getNodePosX(node_bucket_idx, node_idx);
                 const scalar& nv = m_node_vel_x[node_bucket_idx](node_idx);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                PolyPICHelper polyPIC(np - pos, pos - np, dx);
                 coeffs_X += polyPIC.CalculateNodeCoefficients(modes, nv, i);
+
+                v(0) += nv * weights(i, 0);
+
+                m_B.block<1, 3>(pidx * 3 + 0, 0) += nv * weights(i, 0) * (np - pos).transpose() * invD;
             }
 
             for (int i = 0; i < indices_y.rows(); ++i) {
@@ -8050,8 +8092,12 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const Vector3s& np = getNodePosY(node_bucket_idx, node_idx);
                 const scalar& nv = m_node_vel_y[node_bucket_idx](node_idx);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                PolyPICHelper polyPIC(np - pos, pos - np, dx);
                 coeffs_Y += polyPIC.CalculateNodeCoefficients(modes, nv, i);
+
+                v(1) += nv * weights(i, 1);
+
+                m_B.block<1, 3>(pidx * 3 + 1, 0) += nv * weights(i, 1) * (np - pos).transpose() * invD;
             }
 
             for (int i = 0; i < indices_z.rows(); ++i) {
@@ -8063,18 +8109,13 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const Vector3s& np = getNodePosZ(node_bucket_idx, node_idx);
                 const scalar& nv = m_node_vel_z[node_bucket_idx](node_idx);
 
-                PolyPICHelper polyPIC(np, pos, dx);
+                PolyPICHelper polyPIC(np - pos, pos - np, dx);
                 coeffs_Z += polyPIC.CalculateNodeCoefficients(modes, nv, i);
+
+                v(2) += nv * weights(i, 2);
+
+                m_B.block<1, 3>(pidx * 3 + 2, 0) += nv * weights(i, 2) * (np - pos).transpose() * invD;
             }
-
-            // TO DO: what value for np?
-            const Vector3s np = pos;
-
-            PolyPICHelper polyPIC(np, pos, dx);
-
-            v(0) = polyPIC.Contribution(modes, coeffs_X);
-            v(1) = polyPIC.Contribution(modes, coeffs_Y);
-            v(2) = polyPIC.Contribution(modes, coeffs_Z);
 
             m_v.segment<3>(pidx * 4) = v;
             m_v(pidx * 4 + 3) = 0.0;
@@ -8084,6 +8125,15 @@ void TwoDScene::mapNodeParticlesPolyPIC()
             m_scalar_coeff_z.segment(pidx* modes, modes) = coeffs_Z;
 
             m_v.segment<4>(pidx * 4) *= m_liquid_info.elasto_advect_coeff;
+
+            m_B.block<3, 3>(pidx * 3, 0) =
+                ((m_liquid_info.elasto_flip_coeff +
+                    m_liquid_info.elasto_flip_asym_coeff) *
+                    m_B.block<3, 3>(pidx * 3, 0) +
+                    (m_liquid_info.elasto_flip_coeff -
+                        m_liquid_info.elasto_flip_asym_coeff) *
+                    m_B.block<3, 3>(pidx * 3, 0).transpose()) *
+                0.5;
 
             assert(!std::isnan(m_v.segment<3>(pidx * 4).sum()));
             assert(!std::isnan(m_scalar_coeff_x.segment(pidx* modes, modes).sum()));
