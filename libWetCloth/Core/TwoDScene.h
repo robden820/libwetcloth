@@ -61,6 +61,7 @@ struct LiquidInfo {
   int iteration_print_step;
   int surf_tension_smoothing_step;
   int scalar_modes;
+  int fluid_scalar_modes;
   bool use_surf_tension;
   bool use_cohesion;
   bool solid_cohesion;

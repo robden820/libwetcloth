@@ -1902,7 +1902,8 @@ void TwoDSceneXMLParser::loadLiquidInfo(
   info.levelset_thickness = 0.25;
   info.iteration_print_step = 0;
   info.elasto_capture_rate = 1.0;
-  info.scalar_modes = 0;
+  info.scalar_modes = 1;
+  info.fluid_scalar_modes = 1;
 
   rapidxml::xml_node<>* nd = node->first_node("liquidinfo");
   if (nd) {
@@ -2595,6 +2596,26 @@ void TwoDSceneXMLParser::loadLiquidInfo(
             std::cerr << outputmod::startred
                 << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
                 << "Value of 'scalar_modes' must be int [1,27]. Exiting."
+                << std::endl;
+            exit(1);
+        }
+    }
+
+    if ((subnd = nd->first_node("fluidScalarModes"))) {
+        std::string attribute(subnd->first_attribute("value")->value());
+        if (!stringutils::extractFromString(attribute, info.fluid_scalar_modes)) {
+            std::cerr << outputmod::startred
+                << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+                << " Failed to parse value of fluidScalarModes attribute for "
+                "LiquidInfo. Value must be integer in range [1,27]. Exiting."
+                << std::endl;
+            exit(1);
+        }
+        if (info.fluid_scalar_modes < 1 || info.fluid_scalar_modes > 27)
+        {
+            std::cerr << outputmod::startred
+                << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+                << "Value of 'fluidScalarModes' must be int [1,27]. Exiting."
                 << std::endl;
             exit(1);
         }
