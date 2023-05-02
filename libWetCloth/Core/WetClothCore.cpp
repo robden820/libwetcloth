@@ -266,11 +266,11 @@ void WetClothCore::stepSystem(const scalar& dt) {
     }
     else
     {
-        m_scene->mapNodeParticlesPolyPIC(dt);
+        m_scene->mapNodeParticlesPolyPIC();
     }
     
     t1 = timingutils::seconds();
-    timing_buffer[9] += t1 - t0;  // APIC Map Particle Back
+    timing_buffer[9] += t1 - t0;  // Map Particle Back
     t0 = t1;
 
     // Update the Multipliers applied on Geometric Stiffness

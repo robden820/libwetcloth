@@ -737,9 +737,9 @@ void TwoDScene::resizeParticleSystem(int num_particles) {
   m_B.resize(num_particles * 3, 3);
   m_fB.resize(num_particles * 3, 3);
 
-  m_fluid_scalar_coeff_x.resize(num_particles * m_liquid_info.scalar_modes);
-  m_fluid_scalar_coeff_y.resize(num_particles * m_liquid_info.scalar_modes);
-  m_fluid_scalar_coeff_z.resize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_x.resize(num_particles * m_liquid_info.fluid_scalar_modes);
+  m_fluid_scalar_coeff_y.resize(num_particles * m_liquid_info.fluid_scalar_modes);
+  m_fluid_scalar_coeff_z.resize(num_particles * m_liquid_info.fluid_scalar_modes);
   m_scalar_coeff_x.resize(num_particles * m_liquid_info.scalar_modes);
   m_scalar_coeff_y.resize(num_particles * m_liquid_info.scalar_modes);
   m_scalar_coeff_z.resize(num_particles * m_liquid_info.scalar_modes);
@@ -823,9 +823,9 @@ void TwoDScene::conservativeResizeParticles(int num_particles) {
   m_scalar_coeff_x.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_scalar_coeff_y.conservativeResize(num_particles * m_liquid_info.scalar_modes);
   m_scalar_coeff_z.conservativeResize(num_particles * m_liquid_info.scalar_modes);
-  m_fluid_scalar_coeff_x.conservativeResize(num_particles * m_liquid_info.scalar_modes);
-  m_fluid_scalar_coeff_y.conservativeResize(num_particles * m_liquid_info.scalar_modes);
-  m_fluid_scalar_coeff_z.conservativeResize(num_particles * m_liquid_info.scalar_modes);
+  m_fluid_scalar_coeff_x.conservativeResize(num_particles * m_liquid_info.fluid_scalar_modes);
+  m_fluid_scalar_coeff_y.conservativeResize(num_particles * m_liquid_info.fluid_scalar_modes);
+  m_fluid_scalar_coeff_z.conservativeResize(num_particles * m_liquid_info.fluid_scalar_modes);
 
   m_particle_nodes_x.resize(num_particles);
   m_particle_nodes_y.resize(num_particles);
@@ -7954,7 +7954,7 @@ void TwoDScene::mapNodeParticlesPIC()
     });
 }
 
-void TwoDScene::mapNodeParticlesPolyPIC(const scalar& dt)
+void TwoDScene::mapNodeParticlesPolyPIC()
 {
     const int num_part = getNumParticles();
 

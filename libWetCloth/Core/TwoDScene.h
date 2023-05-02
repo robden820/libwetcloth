@@ -518,7 +518,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   void mapNodeParticlesPIC();
 
-  void mapNodeParticlesPolyPIC(const scalar& dt);
+  void mapNodeParticlesPolyPIC();
 
   /*
   * EDIT_END
