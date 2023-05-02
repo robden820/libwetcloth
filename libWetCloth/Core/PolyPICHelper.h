@@ -7,7 +7,7 @@
 class PolyPICHelper
 {
 public:
-	PolyPICHelper(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x);
+	PolyPICHelper(const Vector3s& input, const scalar delta_x);
 	~PolyPICHelper() = default;
 
 	const scalar Contribution(const int scalar_modes, const VectorXs& coefficients);
@@ -20,7 +20,7 @@ private:
 	void CalculateScalarModes();
 	void CalculateCoefficientScales(VectorXs& coefficient_scales);
 
-	const scalar G(const scalar node_pos, const scalar particle_pos);
+	const scalar G(const scalar input);
 
 	std::vector<scalar> m_scalar_modes;
 

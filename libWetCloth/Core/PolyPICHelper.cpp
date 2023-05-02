@@ -1,10 +1,10 @@
 #include "PolyPICHelper.h"
 #include "MathUtilities.h"
 
-PolyPICHelper::PolyPICHelper(const Vector3s& node_pos, const Vector3s& particle_pos, const scalar delta_x)
+PolyPICHelper::PolyPICHelper(const Vector3s& input, const scalar delta_x)
 	: m_delta_x_sqr(delta_x * delta_x), m_inv_delta_x(1 / delta_x), m_inv_delta_x_sqr(m_inv_delta_x * m_inv_delta_x),
-	m_x0(node_pos.x() - particle_pos.x()), m_x1(node_pos.y() - particle_pos.y()), m_x2(node_pos.z() - particle_pos.z()),
-	m_g0(G(node_pos.x(), particle_pos.x())), m_g1(G(node_pos.y(), particle_pos.y())), m_g2(G(node_pos.z(), particle_pos.z()))
+	m_x0(input.x()), m_x1(input.y()), m_x2(input.z()),
+	m_g0(G(m_x0)), m_g1(G(m_x1)), m_g2(G(m_x2))
 {
 	m_scalar_modes.resize(27);
 
@@ -106,18 +106,18 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 
 	CalculateCoefficientScales(coefficient_scales);
 
-	const scalar weight_0 = mathutils::quad_kernel(m_x0 * m_inv_delta_x); // weight for x axis interpolation.
+	const scalar weight_0 = mathutils::quad_kernel(m_x0 * m_inv_delta_x); // weight for x axis.
 	const scalar weight_1 = mathutils::quad_kernel(m_x1 * m_inv_delta_x); // y axis.
 	const scalar weight_2 = mathutils::quad_kernel(m_x2 * m_inv_delta_x); // z axis.
 	const scalar weight = weight_0 * weight_1 * weight_2;
 
-	const int exp_0 = std::fmod(idx, 3.0);
-	const int exp_1 = std::fmod(std::floor(idx / 3.0), 3.0);
-	const int exp_2 = std::fmod(std::floor(idx / 9.0), 3.0);
+	const int idx_0 = std::fmod(idx, 3.0);
+	const int idx_1 = std::fmod(std::floor(idx / 3.0), 3.0);
+	const int idx_2 = std::fmod(std::floor(idx / 9.0), 3.0);
 
-	const scalar two_pow_0 = std::pow(-2.0, exp_0 % 2);
-	const scalar two_pow_1 = std::pow(-2.0, exp_1 % 2);
-	const scalar two_pow_2 = std::pow(-2.0, exp_2 % 2);
+	const scalar exp_0 = std::pow(-2.0, idx_0 % 2);
+	const scalar exp_1 = std::pow(-2.0, idx_1 % 2);
+	const scalar exp_2 = std::pow(-2.0, idx_2 % 2);
 
 	coefficients[0] = weight;
 	coefficients[1] = weight * m_x0;
@@ -127,27 +127,27 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	coefficients[5] = weight * m_x1 * m_x2;
 	coefficients[6] = weight * m_x0 * m_x2;
 	coefficients[7] = weight * m_x0 * m_x1 * m_x2;
-	coefficients[8] = weight_1 * weight_2 * two_pow_0;
-	coefficients[9] = weight_0 * weight_2 * two_pow_1;
-	coefficients[10] = weight_0 * weight_1 * two_pow_2;
-	coefficients[11] = weight_2 * two_pow_0 * two_pow_1;
-	coefficients[12] = weight_1 * two_pow_0 * two_pow_2;
-	coefficients[13] = weight_0 * two_pow_1 * two_pow_2;
-	coefficients[14] = two_pow_0 * two_pow_1 * two_pow_2;
-	coefficients[15] = weight_1 * weight_2 * m_x1 * two_pow_0;
-	coefficients[16] = weight_1 * weight_2 * m_x2 * two_pow_0;
-	coefficients[17] = weight_1 * weight_2 * m_x1 * m_x2 * two_pow_0;
-	coefficients[18] = weight_0 * weight_2 * m_x0 * two_pow_1;
-	coefficients[19] = weight_0 * weight_2 * m_x2 * two_pow_1;
-	coefficients[20] = weight_0 * weight_2 * m_x0 * m_x2 * two_pow_1;
-	coefficients[21] = weight_0 * weight_1 * m_x0 * two_pow_2;
-	coefficients[22] = weight_0 * weight_1 * m_x1 * two_pow_2;
-	coefficients[23] = weight_0 * weight_1 * m_x0 * m_x1 * two_pow_2;
-	coefficients[24] = weight_2 * m_x2 * two_pow_0 * two_pow_1;
-	coefficients[25] = weight_1 * m_x1 * two_pow_0 * two_pow_2;
-	coefficients[26] = weight_0 * m_x0 * two_pow_1 * two_pow_2;
+	coefficients[8] = weight_1 * weight_2 * exp_0;
+	coefficients[9] = weight_0 * weight_2 * exp_1;
+	coefficients[10] = weight_0 * weight_1 * exp_2;
+	coefficients[11] = weight_2 * exp_0 * exp_1;
+	coefficients[12] = weight_1 * exp_0 * exp_2;
+	coefficients[13] = weight_0 * exp_1 * exp_2;
+	coefficients[14] = exp_0 * exp_1 * exp_2;
+	coefficients[15] = weight_1 * weight_2 * m_x1 * exp_0;
+	coefficients[16] = weight_1 * weight_2 * m_x2 * exp_0;
+	coefficients[17] = weight_1 * weight_2 * m_x1 * m_x2 * exp_0;
+	coefficients[18] = weight_0 * weight_2 * m_x0 * exp_1;
+	coefficients[19] = weight_0 * weight_2 * m_x2 * exp_1;
+	coefficients[20] = weight_0 * weight_2 * m_x0 * m_x2 * exp_1;
+	coefficients[21] = weight_0 * weight_1 * m_x0 * exp_2;
+	coefficients[22] = weight_0 * weight_1 * m_x1 * exp_2;
+	coefficients[23] = weight_0 * weight_1 * m_x0 * m_x1 * exp_2;
+	coefficients[24] = weight_2 * m_x2 * exp_0 * exp_1;
+	coefficients[25] = weight_1 * m_x1 * exp_0 * exp_2;
+	coefficients[26] = weight_0 * m_x0 * exp_1 * exp_2;
 	
-	for (unsigned int i = 0; i < scalar_modes; i++)
+	for (int i = 0; i < scalar_modes; i++)
 	{
 		coefficients[i] *= coefficient_scales[i] * velocity;
 	}
@@ -155,13 +155,12 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	return coefficients.segment(0, scalar_modes);
 }
 
-const scalar PolyPICHelper::G(const scalar node_pos, const scalar particle_pos)
+const scalar PolyPICHelper::G(const scalar input)
 {
-	const scalar diff = node_pos - particle_pos;
-	const scalar p = -particle_pos + node_pos;
+	const scalar weight = mathutils::quad_kernel(input * m_inv_delta_x);
 
-	const scalar a = diff * diff;
-	const scalar b = (p * (m_delta_x_sqr - 4.0 * p * p) * diff) * m_inv_delta_x_sqr;
+	const scalar a = weight * weight;
+	const scalar b = input * (m_delta_x_sqr - 4.0 * input * input) * weight * m_inv_delta_x_sqr;
 	const scalar c = m_delta_x_sqr * 0.25;
 
 	return a - b - c;
