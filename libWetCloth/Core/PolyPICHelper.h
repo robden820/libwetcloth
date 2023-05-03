@@ -3,38 +3,43 @@
 
 #include "libWetCloth/Core/MathDefs.h"
 #include <Eigen/StdVector>
-
-class PolyPICHelper
+namespace PolyPIC
 {
-public:
-	PolyPICHelper(const Vector3s& input, const scalar delta_x);
-	~PolyPICHelper() = default;
+	class PolyPICHelper
+	{
+	public:
+		PolyPICHelper(const Vector3s& input, const scalar delta_x);
+		~PolyPICHelper() = default;
 
-	const scalar Contribution(const int scalar_modes, const VectorXs& coefficients);
-	VectorXs CalculateNodeCoefficients(const int scalar_modes, const scalar velocity, const int idx); // Coefficient for the single node, to be summed over all contributing nodes.
+		const scalar Contribution(const int scalar_modes, const VectorXs& coefficients);
+		VectorXs CalculateNodeCoefficients(const int scalar_modes, const scalar velocity, const int idx); // Coefficient for the single node, to be summed over all contributing nodes.
 
-private:
+	private:
 
-	PolyPICHelper() {};
+		PolyPICHelper() {};
 
-	void CalculateScalarModes();
-	void CalculateCoefficientScales(VectorXs& coefficient_scales);
+		void CalculateScalarModes();
+		
 
-	const scalar G(const scalar input);
+		const scalar G(const scalar input);
 
-	std::vector<scalar> m_scalar_modes;
+		std::vector<scalar> m_scalar_modes;
 
-	scalar m_delta_x_sqr;
-	scalar m_inv_delta_x;
-	scalar m_inv_delta_x_sqr;
+		scalar m_delta_x_sqr;
+		scalar m_inv_delta_x;
+		scalar m_inv_delta_x_sqr;
 
-	scalar m_x0;
-	scalar m_x1;
-	scalar m_x2;
+		scalar m_x0;
+		scalar m_x1;
+		scalar m_x2;
 
-	scalar m_g0;
-	scalar m_g1;
-	scalar m_g2;
-};
+		scalar m_g0;
+		scalar m_g1;
+		scalar m_g2;
+	};
 
+	void CalculateCoefficientScales(const scalar delta_x);
+
+	static VectorXs polypic_coefficient_scales; // Used to scale the above coefficients. Can be calculated once and reused.
+}
 #endif

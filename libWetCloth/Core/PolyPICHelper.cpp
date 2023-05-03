@@ -1,6 +1,8 @@
 #include "PolyPICHelper.h"
 #include "MathUtilities.h"
 
+using namespace PolyPIC;
+
 PolyPICHelper::PolyPICHelper(const Vector3s& input, const scalar delta_x)
 	: m_delta_x_sqr(delta_x * delta_x), m_inv_delta_x(1 / delta_x), m_inv_delta_x_sqr(m_inv_delta_x * m_inv_delta_x),
 	m_x0(input.x()), m_x1(input.y()), m_x2(input.z()),
@@ -42,43 +44,44 @@ void PolyPICHelper::CalculateScalarModes()
 	m_scalar_modes[26] = m_g1 * m_g2 * m_x0;
 }
 
-void PolyPICHelper::CalculateCoefficientScales(VectorXs& coefficient_scales)
+void PolyPIC::CalculateCoefficientScales(const scalar delta_x)
 {
-	assert(coefficient_scales.size() >= 27);
+	polypic_coefficient_scales.resize(27);
 
 	// See tech_doc for following constants.
 	// Constants are calculated as 1 / presented_value.
 
-	const scalar inv_delta_x_pow_4 = m_inv_delta_x_sqr * m_inv_delta_x_sqr;
-	const scalar inv_delta_x_pow_6 = inv_delta_x_pow_4 * m_inv_delta_x_sqr;
+	const scalar inv_delta_x_sqr = 1.0 / (delta_x * delta_x);
+	const scalar inv_delta_x_pow_4 = inv_delta_x_sqr * inv_delta_x_sqr;
+	const scalar inv_delta_x_pow_6 = inv_delta_x_pow_4 * inv_delta_x_sqr;
 
-	coefficient_scales[0] = 1;
-	coefficient_scales[1] = m_inv_delta_x_sqr * 4;
-	coefficient_scales[2] = m_inv_delta_x_sqr * 4;
-	coefficient_scales[3] = m_inv_delta_x_sqr * 4;
-	coefficient_scales[4] = inv_delta_x_pow_4 * 16;
-	coefficient_scales[5] = inv_delta_x_pow_4 * 16;
-	coefficient_scales[6] = inv_delta_x_pow_4 * 16;
-	coefficient_scales[7] = inv_delta_x_pow_6 * 64;
-	coefficient_scales[8] = m_inv_delta_x_sqr * 0.5;
-	coefficient_scales[9] = m_inv_delta_x_sqr * 0.5;
-	coefficient_scales[10] = m_inv_delta_x_sqr * 0.5;
-	coefficient_scales[11] = inv_delta_x_pow_4 * 0.25;
-	coefficient_scales[12] = inv_delta_x_pow_4 * 0.25;
-	coefficient_scales[13] = inv_delta_x_pow_4 * 0.25;
-	coefficient_scales[14] = inv_delta_x_pow_6 * 0.125;
-	coefficient_scales[15] = inv_delta_x_pow_4 * 2;
-	coefficient_scales[16] = inv_delta_x_pow_4 * 2;
-	coefficient_scales[17] = inv_delta_x_pow_6 * 8;
-	coefficient_scales[18] = inv_delta_x_pow_4 * 2;
-	coefficient_scales[19] = inv_delta_x_pow_4 * 2;
-	coefficient_scales[20] = inv_delta_x_pow_6 * 8;
-	coefficient_scales[21] = inv_delta_x_pow_4 * 2;
-	coefficient_scales[22] = inv_delta_x_pow_4 * 2;
-	coefficient_scales[23] = inv_delta_x_pow_6 * 8;
-	coefficient_scales[24] = inv_delta_x_pow_6;
-	coefficient_scales[25] = inv_delta_x_pow_6;
-	coefficient_scales[26] = inv_delta_x_pow_6;
+	polypic_coefficient_scales[0] = 1;
+	polypic_coefficient_scales[1] = inv_delta_x_sqr * 4;
+	polypic_coefficient_scales[2] = inv_delta_x_sqr * 4;
+	polypic_coefficient_scales[3] = inv_delta_x_sqr * 4;
+	polypic_coefficient_scales[4] = inv_delta_x_pow_4 * 16;
+	polypic_coefficient_scales[5] = inv_delta_x_pow_4 * 16;
+	polypic_coefficient_scales[6] = inv_delta_x_pow_4 * 16;
+	polypic_coefficient_scales[7] = inv_delta_x_pow_6 * 64;
+	polypic_coefficient_scales[8] = inv_delta_x_sqr * 0.5;
+	polypic_coefficient_scales[9] = inv_delta_x_sqr * 0.5;
+	polypic_coefficient_scales[10] = inv_delta_x_sqr * 0.5;
+	polypic_coefficient_scales[11] = inv_delta_x_pow_4 * 0.25;
+	polypic_coefficient_scales[12] = inv_delta_x_pow_4 * 0.25;
+	polypic_coefficient_scales[13] = inv_delta_x_pow_4 * 0.25;
+	polypic_coefficient_scales[14] = inv_delta_x_pow_6 * 0.125;
+	polypic_coefficient_scales[15] = inv_delta_x_pow_4 * 2;
+	polypic_coefficient_scales[16] = inv_delta_x_pow_4 * 2;
+	polypic_coefficient_scales[17] = inv_delta_x_pow_6 * 8;
+	polypic_coefficient_scales[18] = inv_delta_x_pow_4 * 2;
+	polypic_coefficient_scales[19] = inv_delta_x_pow_4 * 2;
+	polypic_coefficient_scales[20] = inv_delta_x_pow_6 * 8;
+	polypic_coefficient_scales[21] = inv_delta_x_pow_4 * 2;
+	polypic_coefficient_scales[22] = inv_delta_x_pow_4 * 2;
+	polypic_coefficient_scales[23] = inv_delta_x_pow_6 * 8;
+	polypic_coefficient_scales[24] = inv_delta_x_pow_6;
+	polypic_coefficient_scales[25] = inv_delta_x_pow_6;
+	polypic_coefficient_scales[26] = inv_delta_x_pow_6;
 }
 
 const scalar PolyPICHelper::Contribution(const int scalar_modes, const VectorXs& coefficients)
@@ -102,9 +105,6 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	assert(idx >= 0 && idx < 27);
 
 	VectorXs coefficients(27);
-	VectorXs coefficient_scales(27);
-
-	CalculateCoefficientScales(coefficient_scales);
 
 	const scalar weight_0 = mathutils::quad_kernel(m_x0 * m_inv_delta_x); // weight for x axis.
 	const scalar weight_1 = mathutils::quad_kernel(m_x1 * m_inv_delta_x); // y axis.
@@ -149,7 +149,7 @@ VectorXs PolyPICHelper::CalculateNodeCoefficients(const int scalar_modes, const 
 	
 	for (int i = 0; i < scalar_modes; i++)
 	{
-		coefficients[i] *= coefficient_scales[i] * velocity;
+		coefficients[i] *= polypic_coefficient_scales[i] * velocity;
 	}
 	
 	return coefficients.segment(0, scalar_modes);

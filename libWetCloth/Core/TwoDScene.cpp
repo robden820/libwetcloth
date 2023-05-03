@@ -7357,7 +7357,7 @@ void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
                     const Matrix3s angular = (Matrix3s::Identity() + dt * B).inverse();
                     const Vector3s input = angular * (np - pos);
 
-                    PolyPICHelper polyPIC(input, dx);
+                    PolyPIC::PolyPICHelper polyPIC(input, dx);
 
                     p += (m(0) + fm(0)) * weights(pair.second, 0) * polyPIC.Contribution(modes, scalar_coeff);
                     mass += (m(0) + fm(0)) * weights(pair.second, 0);
@@ -7376,7 +7376,7 @@ void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
                     const Matrix3s angular = (Matrix3s::Identity() + dt * fB).inverse();
                     const Vector3s input = angular * (np - pos);
 
-                    PolyPICHelper polyPIC(input, dx);
+                    PolyPIC::PolyPICHelper polyPIC(input, dx);
 
                     p_fluid += fm(0) * weights(pair.second, 0) * polyPIC.Contribution(fluid_modes, fluid_scalar_coeff);
                     mass_fluid += fm(0) * weights(pair.second, 0);
@@ -7457,7 +7457,7 @@ void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
                     const Matrix3s angular = (Matrix3s::Identity() + dt * B).inverse();
                     const Vector3s input = angular * (np - pos);
 
-                    PolyPICHelper polyPIC(input, dx);
+                    PolyPIC::PolyPICHelper polyPIC(input, dx);
 
                     p += (m(1) + fm(1)) * weights(pair.second, 1) * polyPIC.Contribution(modes, scalar_coeff);
                     mass += (m(1) + fm(1)) * weights(pair.second, 1);
@@ -7477,7 +7477,7 @@ void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
                     const Matrix3s angular = (Matrix3s::Identity() + dt * fB).inverse();
                     const Vector3s input = angular * (np - pos);
 
-                    PolyPICHelper polyPIC(input, dx);
+                    PolyPIC::PolyPICHelper polyPIC(input, dx);
 
                     p_fluid += fm(1) * weights(pair.second, 1) * polyPIC.Contribution(fluid_modes, fluid_scalar_coeff);
                     mass_fluid += fm(1) * weights(pair.second, 1);
@@ -7558,7 +7558,7 @@ void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
                     const Matrix3s angular = (Matrix3s::Identity() + dt * B).inverse();
                     const Vector3s input = angular * (np - pos);
 
-                    PolyPICHelper polyPIC(input, dx);
+                    PolyPIC::PolyPICHelper polyPIC(input, dx);
 
                     p += (m(2) + fm(2)) * weights(pair.second, 2) * polyPIC.Contribution(modes, scalar_coeff);
                     mass += (m(2) + fm(2)) * weights(pair.second, 2);
@@ -7578,7 +7578,7 @@ void TwoDScene::mapParticleNodesPolyPIC(const scalar& dt)
                     const Matrix3s angular = (Matrix3s::Identity() + dt * fB).inverse();
                     const Vector3s input = angular * (np - pos);
 
-                    PolyPICHelper polyPIC(input, dx);
+                    PolyPIC::PolyPICHelper polyPIC(input, dx);
 
                     p_fluid += fm(2) * weights(pair.second, 2) * polyPIC.Contribution(fluid_modes, fluid_scalar_coeff);
                     mass_fluid += fm(2) * weights(pair.second, 2);
@@ -8005,7 +8005,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const scalar fnv = m_node_vel_fluid_x[node_bucket_idx](node_idx);
                 const Vector3s np = getNodePosX(node_bucket_idx, node_idx);
                 
-                PolyPICHelper polyPIC(np - pos, dx);
+                PolyPIC::PolyPICHelper polyPIC(np - pos, dx);
                 fluid_coeffs_X += polyPIC.CalculateNodeCoefficients(fluid_modes, fnv, i);
 
                 fv(0) += fnv * weights(i, 0);
@@ -8022,7 +8022,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const scalar fnv = m_node_vel_fluid_y[node_bucket_idx](node_idx);
                 const Vector3s np = getNodePosY(node_bucket_idx, node_idx);
 
-                PolyPICHelper polyPIC(np - pos, dx);
+                PolyPIC::PolyPICHelper polyPIC(np - pos, dx);
                 fluid_coeffs_Y += polyPIC.CalculateNodeCoefficients(fluid_modes, fnv, i);
 
                 fv(1) += fnv * weights(i, 1);
@@ -8039,7 +8039,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const scalar fnv = m_node_vel_fluid_z[node_bucket_idx](node_idx);
                 const Vector3s np = getNodePosZ(node_bucket_idx, node_idx);
 
-                PolyPICHelper polyPIC(np - pos, dx);
+                PolyPIC::PolyPICHelper polyPIC(np - pos, dx);
                 fluid_coeffs_Z += polyPIC.CalculateNodeCoefficients(fluid_modes, fnv, i);
 
                 fv(2) += fnv * weights(i, 2);
@@ -8077,7 +8077,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const Vector3s& np = getNodePosX(node_bucket_idx, node_idx);
                 const scalar& nv = m_node_vel_x[node_bucket_idx](node_idx);
 
-                PolyPICHelper polyPIC(np - pos, dx);
+                PolyPIC::PolyPICHelper polyPIC(np - pos, dx);
                 coeffs_X += polyPIC.CalculateNodeCoefficients(modes, nv, i);
 
                 v(0) += nv * weights(i, 0);
@@ -8094,7 +8094,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const Vector3s& np = getNodePosY(node_bucket_idx, node_idx);
                 const scalar& nv = m_node_vel_y[node_bucket_idx](node_idx);
 
-                PolyPICHelper polyPIC(np - pos, dx);
+                PolyPIC::PolyPICHelper polyPIC(np - pos, dx);
                 coeffs_Y += polyPIC.CalculateNodeCoefficients(modes, nv, i);
 
                 v(1) += nv * weights(i, 1);
@@ -8111,7 +8111,7 @@ void TwoDScene::mapNodeParticlesPolyPIC()
                 const Vector3s& np = getNodePosZ(node_bucket_idx, node_idx);
                 const scalar& nv = m_node_vel_z[node_bucket_idx](node_idx);
 
-                PolyPICHelper polyPIC(np - pos, dx);
+                PolyPIC::PolyPICHelper polyPIC(np - pos, dx);
                 coeffs_Z += polyPIC.CalculateNodeCoefficients(modes, nv, i);
 
                 v(2) += nv * weights(i, 2);
@@ -9182,3 +9182,18 @@ void TwoDScene::applyScript(const scalar& dt) {
 void TwoDScene::checkConsistency() {
   // TODO: Add more checks
 }
+
+/*
+* Modified by Rob Dennison
+*
+* EDIT_START
+*/
+
+void TwoDScene::initPolyPIC() const
+{
+    PolyPIC::CalculateCoefficientScales(getCellSize());
+}
+
+/*
+* EDIT_END
+*/

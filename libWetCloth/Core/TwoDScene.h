@@ -957,6 +957,18 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   const std::vector<unsigned char>& getBucketActivated() const;
 
+/*
+* Modified by Rob Dennison
+*
+* EDIT_START
+*/
+
+  void initPolyPIC() const;
+
+/*
+* 
+*/
+
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
  private:
@@ -990,12 +1002,22 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   MatrixXs m_B;  // particle B matrix
   MatrixXs m_fB;
 
+/*
+* Modified by Rob Dennison
+*
+* EDIT_START
+*/
+
   VectorXs m_fluid_scalar_coeff_x; // fluid particle coefficients C.
   VectorXs m_fluid_scalar_coeff_y;
   VectorXs m_fluid_scalar_coeff_z;
   VectorXs m_scalar_coeff_x; // particle coefficients C.
   VectorXs m_scalar_coeff_y;
   VectorXs m_scalar_coeff_z;
+
+/*
+* EDIT_END
+*/
 
   VectorXs m_x_gauss;
   VectorXs m_v_gauss;

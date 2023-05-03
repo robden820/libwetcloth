@@ -745,6 +745,17 @@ void TwoDSceneXMLParser::loadParticleSimulation(
 
   scene->saveParticleVelocity();
 
+/*
+* Modified by Rob Dennison
+*
+* EDIT_START
+*/
+
+  scene->initPolyPIC();
+/*
+* EDIT_END
+*/
+
   // Forces
   scene->loadAttachForces();
   if (scene->getLiquidInfo().use_cohesion)
