@@ -1008,9 +1008,6 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 * EDIT_START
 */
 
-  VectorXs m_fluid_scalar_coeff_x; // fluid particle coefficients C.
-  VectorXs m_fluid_scalar_coeff_y;
-  VectorXs m_fluid_scalar_coeff_z;
   VectorXs m_scalar_coeff_x; // particle coefficients C.
   VectorXs m_scalar_coeff_y;
   VectorXs m_scalar_coeff_z;
