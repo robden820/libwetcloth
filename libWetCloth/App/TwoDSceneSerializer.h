@@ -23,6 +23,14 @@ struct SerializePosPacket {
   MatrixXs m_d_gauss;
 };
 
+struct SerializeMetaPacket {
+    std::string fn_meta;
+    std::string fps;
+    std::string peak_mem_usage;
+    std::string num_particles;
+    std::string num_fluid_particles;
+};
+
 struct SerializePacket {
   std::string fn_clothes;
   std::string fn_hairs;
@@ -72,6 +80,11 @@ class TwoDSceneSerializer {
                       const std::string& fn_springs);
 
   void serializePositionOnly(TwoDScene& scene, const std::string& fn_pos);
+
+  void serializeMeta(TwoDScene& scene, const std::string& fn_meta, 
+                     const std::string& fps,
+                     const std::string& peak_mem_usage,
+                     const std::string& num_particles, const std::string& num_fluid_particles);
 
   void loadPosOnly(TwoDScene& scene, std::ifstream& inputstream);
 

@@ -101,6 +101,13 @@ void stepSystem() {
 
   // Determine if the simulation is complete
   if (g_current_step >= g_num_steps) {
+      std::stringstream oss_meta;
+      oss_meta << g_short_file_name << "/META" << std::setw(5)
+          << std::setfill('0') << (g_current_step / g_save_to_binary)
+          << ".obj";
+
+    g_executable_simulation->serializeMeta(oss_meta.str());
+
     std::cout << "Complete Simulation! Enter time to continue (exit with 0): "
               << std::endl;
     double new_time = 0.0;

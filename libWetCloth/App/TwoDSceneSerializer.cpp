@@ -36,6 +36,23 @@ void serialize_pos_subprog(SerializePosPacket* packet) {
   delete packet;
 }
 
+void serialize_meta_subprog(SerializeMetaPacket* packet) {
+    std::ofstream ofs_meta(packet->fn_meta.c_str());
+    size_t string_size = sizeof(std::string);
+
+    ofs_meta << "fps: " << packet->fps << "\n"
+        << "peak_mem_usage: " << packet->peak_mem_usage << "\n"
+        << "num particles: " << packet->num_particles << "\n"
+        << "num fluid particles: " << packet->num_fluid_particles;
+
+    ofs_meta.flush();
+    ofs_meta.close();
+
+    std::cout << "[File with meta output written]" << std::endl;
+
+    delete packet;
+}
+
 void serialize_subprog(SerializePacket* packet) {
   std::ofstream ofs_fluid(packet->fn_fluid.c_str());
   const int num_fp = packet->m_fluid_vertices.size();
@@ -160,6 +177,24 @@ void TwoDSceneSerializer::serializeScene(
 
   std::thread t(std::bind(serialize_subprog, data));
   t.detach();
+}
+
+void TwoDSceneSerializer::serializeMeta(TwoDScene& scene, const std::string& fn_meta, 
+                                        const std::string& fps,
+                                        const std::string& peak_mem_usage,
+                                        const std::string& num_particles, const std::string& num_fluid_particles)
+{
+    SerializeMetaPacket* data = new SerializeMetaPacket;
+
+    data->fn_meta = fn_meta.c_str();
+
+    data->fps = fps.c_str();
+    data->peak_mem_usage = peak_mem_usage.c_str();
+    data->num_particles = num_particles.c_str();
+    data->num_fluid_particles = num_fluid_particles.c_str();
+
+    std::thread t(std::bind(serialize_meta_subprog, data));
+    t.detach();
 }
 
 void TwoDSceneSerializer::serializePositionOnly(TwoDScene& scene,

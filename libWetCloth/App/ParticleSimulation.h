@@ -51,6 +51,8 @@ class ParticleSimulation {
 
   void serializePositionOnly(const std::string& fn_pos);
 
+  void serializeMeta(const std::string& fn_meta);
+
   void readPos(const std::string& fn_pos);
   /////////////////////////////////////////////////////////////////////////////
   // Status Functions

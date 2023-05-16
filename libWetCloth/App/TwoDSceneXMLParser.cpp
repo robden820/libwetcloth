@@ -3390,9 +3390,9 @@ void TwoDSceneXMLParser::loadIntegrator(
   }
 
   int pic_method = 0;
-  rapidxml::xml_attribute<>* apnd = nd->first_attribute("picMethod");
-  if (apnd) {
-    if (!stringutils::extractFromString(std::string(apnd->value()), pic_method)) {
+  rapidxml::xml_attribute<>* pmnd = nd->first_attribute("picMethod");
+  if (pmnd) {
+    if (!stringutils::extractFromString(std::string(pmnd->value()), pic_method)) {
       std::cerr << outputmod::startred
                 << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
                 << " Failed to parse 'picMethod' attribute for integrator. Value "
@@ -3410,6 +3410,28 @@ void TwoDSceneXMLParser::loadIntegrator(
     }
   }
   scenestepper->setPICMethod(pic_method);
+
+  int use_IDP = 0;
+  rapidxml::xml_attribute<>* idpnd = nd->first_attribute("useImplicitDensityProjection");
+  if (idpnd)
+  {
+      if (!stringutils::extractFromString(std::string(idpnd->value()), use_IDP)) {
+          std::cerr << outputmod::startred
+              << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+              << " Failed to parse 'useImplicitDensityProjection' attribute for integrator. Value "
+              "must be int [0, 1]. Exiting."
+              << std::endl;
+          exit(1);
+      }
+      if (use_IDP < 0 || use_IDP > 2)
+      {
+          std::cerr << outputmod::startred
+              << "ERROR IN XMLSCENEPARSER:" << outputmod::endred
+              << "Value of 'useImplicitDensityProjection' must be int [0,1]. Exiting."
+              << std::endl;
+          exit(1);
+      }
+  }
 
   // std::cout << "Integrator: " << (*scenestepper)->getName() << "   dt: " <<
   // dt << std::endl;

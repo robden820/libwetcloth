@@ -422,6 +422,54 @@ void ParticleSimulation::serializeScene(
                                     fn_external_boundaries, fn_spring);
 }
 
+void ParticleSimulation::serializeMeta(const std::string& fn_meta)
+{
+    std::string fps;
+    std::string peak_mem_usage;
+    std::string avg_mem_usage;
+    std::string num_particles;
+    std::string num_fluid_particles;
+
+    // timing data
+    const std::vector<scalar>& timing_buffer = m_core->getTimingStatistics();
+
+    scalar total_time = 0.0;
+    for (scalar t : timing_buffer) total_time += t;
+
+    const scalar divisor = (scalar)(m_core->getCurrentTime() + 1);
+
+    fps = std::to_string(total_time / divisor);
+
+    // mem usage
+
+    int peak_idx = 0;
+    int cur_idx = 0;
+
+    const char* mem_units[] = { "B", "KB", "MB", "GB", "TB", "PB" };
+
+    size_t peak_usage = memutils::getPeakRSS();
+    scalar peak_mem = (scalar)peak_usage;
+    while (peak_mem > 1024.0 &&
+        peak_idx < (int)(sizeof(mem_units) / sizeof(char*))) {
+        peak_mem /= 1024.0;
+        peak_idx++;
+    }
+
+    peak_mem_usage = std::to_string(peak_mem) + std::string(mem_units[peak_idx]);
+
+    // particle info
+
+    num_particles = std::to_string(m_core->getScene()->getNumParticles());
+    num_fluid_particles = std::to_string(m_core->getScene()->getNumFluidParticles());
+
+
+    m_scene_serializer.serializeMeta(*m_core->getScene(), fn_meta,
+                                     fps,
+                                     peak_mem_usage,
+                                     num_particles,
+                                     num_fluid_particles);
+}
+
 void ParticleSimulation::centerCamera(bool b_reshape) {
   renderingutils::Viewport view;
 
