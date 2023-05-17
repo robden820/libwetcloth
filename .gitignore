@@ -9,6 +9,7 @@ unit_tests/*
 *.geo*
 geo/*
 houdini/render/*
+houdini/backup*
 *.bin
 *.obj
 log*.*
