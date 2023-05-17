@@ -429,6 +429,7 @@ void ParticleSimulation::serializeMeta(const std::string& fn_meta)
     std::string avg_mem_usage;
     std::string num_particles;
     std::string num_fluid_particles;
+    std::string num_elements;
 
     // timing data
     const std::vector<scalar>& timing_buffer = m_core->getTimingStatistics();
@@ -459,15 +460,19 @@ void ParticleSimulation::serializeMeta(const std::string& fn_meta)
 
     // particle info
 
-    num_particles = std::to_string(m_core->getScene()->getNumParticles());
-    num_fluid_particles = std::to_string(m_core->getScene()->getNumFluidParticles());
+    const WetClothCore::Info& info = m_core->getInfo();
 
+    
+    num_particles = std::to_string(info.m_num_particles_accu);
+    num_fluid_particles = std::to_string(info.m_num_fluid_particles_accu);
+    num_elements = std::to_string(info.m_num_elements_accu);
 
     m_scene_serializer.serializeMeta(*m_core->getScene(), fn_meta,
                                      fps,
                                      peak_mem_usage,
                                      num_particles,
-                                     num_fluid_particles);
+                                     num_fluid_particles,
+                                     num_elements);
 }
 
 void ParticleSimulation::centerCamera(bool b_reshape) {

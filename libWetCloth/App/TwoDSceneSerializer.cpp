@@ -43,7 +43,8 @@ void serialize_meta_subprog(SerializeMetaPacket* packet) {
     ofs_meta << "fps: " << packet->fps << "\n"
         << "peak_mem_usage: " << packet->peak_mem_usage << "\n"
         << "num particles: " << packet->num_particles << "\n"
-        << "num fluid particles: " << packet->num_fluid_particles;
+        << "num fluid particles: " << packet->num_fluid_particles << "\n"
+        << "num elements: " << packet->num_elements;
 
     ofs_meta.flush();
     ofs_meta.close();
@@ -182,7 +183,9 @@ void TwoDSceneSerializer::serializeScene(
 void TwoDSceneSerializer::serializeMeta(TwoDScene& scene, const std::string& fn_meta, 
                                         const std::string& fps,
                                         const std::string& peak_mem_usage,
-                                        const std::string& num_particles, const std::string& num_fluid_particles)
+                                        const std::string& num_particles,
+                                        const std::string& num_fluid_particles,
+                                        const std::string& num_elements)
 {
     SerializeMetaPacket* data = new SerializeMetaPacket;
 
@@ -192,6 +195,7 @@ void TwoDSceneSerializer::serializeMeta(TwoDScene& scene, const std::string& fn_
     data->peak_mem_usage = peak_mem_usage.c_str();
     data->num_particles = num_particles.c_str();
     data->num_fluid_particles = num_fluid_particles.c_str();
+    data->num_elements = num_elements.c_str();
 
     std::thread t(std::bind(serialize_meta_subprog, data));
     t.detach();

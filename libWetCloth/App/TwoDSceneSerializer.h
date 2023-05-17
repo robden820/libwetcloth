@@ -29,6 +29,7 @@ struct SerializeMetaPacket {
     std::string peak_mem_usage;
     std::string num_particles;
     std::string num_fluid_particles;
+    std::string num_elements;
 };
 
 struct SerializePacket {
@@ -84,7 +85,9 @@ class TwoDSceneSerializer {
   void serializeMeta(TwoDScene& scene, const std::string& fn_meta, 
                      const std::string& fps,
                      const std::string& peak_mem_usage,
-                     const std::string& num_particles, const std::string& num_fluid_particles);
+                     const std::string& num_particles,
+                     const std::string& num_fluid_particles,
+                     const std::string& num_elements);
 
   void loadPosOnly(TwoDScene& scene, std::ifstream& inputstream);
 
