@@ -15,9 +15,10 @@
     <halfThickness value="0.0165"/>
     <yarnDiameter value="0.005"/>
     <restVolumeFraction value="0.4"/>
+	<scalarModes value="27"/>
   </liquidinfo>
   <duration time="20.0"/>
-  <integrator type="linearized-implicit-euler" dt="0.001" apic="1" criterion="1e-6"/>
+  <integrator type="linearized-implicit-euler" dt="0.001" picMethod="2" criterion="1e-6"/>
   <collision type="continuous-time"/>
 
   <bucketinfo size="4.0" numcells="4"/>

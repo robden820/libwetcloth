@@ -1,6 +1,6 @@
 <scene>
   <duration time="4.0"/>
-  <integrator type="linearized-implicit-euler" dt="0.0002" apic="1" criterion="1e-8" surftensionsubsteps="1" manifoldsubsteps="8"/>
+  <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="2" criterion="1e-8" surftensionsubsteps="1" manifoldsubsteps="8"/>
   <collision type="continuous-time"/>
 
   <bucketinfo size="1.152" numcells="4" kernelorder="2"/>
@@ -10,12 +10,13 @@
     <surfTensionCoeff value="72.0"/>
     <yarnDiameter value="0.01"/>
     <restVolumeFraction value="0.4"/>
-    <flipCoeff value="0.9992"/>
+    <flipCoeff value="1.0"/>
     <elastoFlipCoeff value="0.0"/>
     <elastoFlipAsymCoeff value="0.9992"/>   
     <elastoAdvectCoeff value="0.9992"/> 
     <multiLevel value="0"/>
     <softCohesion value="0"/>
+	<scalarModes value="8"/>
   </liquidinfo>
 
   <simplegravity fx="0." fy="-981.0"/>

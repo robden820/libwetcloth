@@ -1,5 +1,5 @@
 <scene>
-  <duration time="1.0"/>
+  <duration time="5.0"/>
   <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="0" criterion="1e-8" manifoldsubsteps="36" maxiters="200"/>
   <collision type="continuous-time"/>
 
@@ -11,7 +11,7 @@
     <halfThickness value="0.018"/>
     <yarnDiameter value="0.01"/>
     <restVolumeFraction value="0.4"/>
-    <flipCoeff value="0.996"/>
+    <flipCoeff value="1.0"/>
     <elastoFlipCoeff value="0.0"/>
     <elastoFlipAsymCoeff value="0.996"/>   
     <elastoAdvectCoeff value="0.996"/> 

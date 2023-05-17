@@ -1,5 +1,5 @@
 <scene>
-  <duration time="10.0"/>
+  <duration time="5.0"/>
   <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="1" criterion="1e-8" manifoldsubsteps="36" maxiters="200"/>
   <collision type="continuous-time"/>
 
