@@ -463,9 +463,9 @@ void ParticleSimulation::serializeMeta(const std::string& fn_meta)
     const WetClothCore::Info& info = m_core->getInfo();
 
     
-    num_particles = std::to_string(info.m_num_particles_accu);
-    num_fluid_particles = std::to_string(info.m_num_fluid_particles_accu);
-    num_elements = std::to_string(info.m_num_elements_accu);
+    num_particles = std::to_string(info.m_num_particles_accu / divisor);
+    num_fluid_particles = std::to_string(info.m_num_fluid_particles_accu / divisor);
+    num_elements = std::to_string(info.m_num_elements_accu / divisor);
 
     m_scene_serializer.serializeMeta(*m_core->getScene(), fn_meta,
                                      fps,
