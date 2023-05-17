@@ -8,7 +8,7 @@ unit_tests/*
 *.exr
 *.geo*
 geo/*
-render/*
+houdini/render/*
 *.bin
 *.obj
 log*.*
