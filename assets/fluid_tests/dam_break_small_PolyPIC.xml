@@ -1,6 +1,6 @@
 <scene>
   <duration time="5.0"/>
-  <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="2" criterion="1e-8" manifoldsubsteps="36" maxiters="200" useImplicitDensityProjection="1"/>
+  <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="2" criterion="1e-8" manifoldsubsteps="36" maxiters="200"/>
   <collision type="continuous-time"/>
 
   <bucketinfo size="1.152" numcells="4" kernelorder="2"/>
