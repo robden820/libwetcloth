@@ -1,10 +1,10 @@
 <scene>
   <duration time="4.0"/>
-  <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="2" criterion="1e-8" surftensionsubsteps="1" manifoldsubsteps="8"/>
+  <integrator type="linearized-implicit-euler" dt="0.0001" picMethod="2" criterion="1e-8" surftensionsubsteps="1" manifoldsubsteps="8"/>
   <collision type="continuous-time"/>
 
   <bucketinfo size="1.152" numcells="4" kernelorder="2"/>
-
+  
   <liquidinfo>
     <viscosity value="8.9e-3"/>
     <surfTensionCoeff value="72.0"/>
@@ -17,6 +17,7 @@
     <multiLevel value="0"/>
     <softCohesion value="0"/>
 	<scalarModes value="8"/>
+	<fluidScalarModes value="8"/>
   </liquidinfo>
 
   <simplegravity fx="0." fy="-981.0"/>
