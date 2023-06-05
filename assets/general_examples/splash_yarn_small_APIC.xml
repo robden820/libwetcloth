@@ -1,7 +1,7 @@
 <scene>
   <description text="Nothing to say"/>
   <duration time="4.0"/>
-  <integrator type="linearized-implicit-euler" dt="0.0002" apic="1" criterion="1e-4" manifoldsubsteps="36"/>
+  <integrator type="linearized-implicit-euler" dt="0.0002" picMethod="1" criterion="1e-4" manifoldsubsteps="36"/>
   <collision type="continuous-time"/>
   <bucketinfo size="1.152" numcells="4"/>
   <simplegravity fx="0.0" fy="-981.0" fz="0.0" />
