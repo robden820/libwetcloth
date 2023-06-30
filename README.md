@@ -1,8 +1,10 @@
-[![libWetCloth](http://www.cs.columbia.edu/cg/raymond/tighten_the_towel.jpg)](http://www.cs.columbia.edu/cg/wetcloth/)
+
+![libWetClothPolyPIC](https://github.com/robden820/libwetcloth/assets/23746310/2425f0bf-c542-4912-a85c-eeba8aacd602)
 
 # libWetCloth with PolyPIC #
 
-This repository has modified the work of Yun Fei to incorporate the Polynomial Particle-in-Cell model of Fu et al [A Polynomial Particle-in-Cell Method, 2017].
+This repository has modified the work of![yarn_medium_polypic]
+ Yun Fei to incorporate the Polynomial Particle-in-Cell model of Fu et al [A Polynomial Particle-in-Cell Method, 2017].
 Within TwoDScene.h/.cpp, additional functions have been added to allow for the use of PolyPIC (as well as standard PIC) transfers.
 To use the different transfers, the assets have been modified to use a "picMethod" tag, with 0 being PIC, 1 APIC, 2 PolyPIC.
 
@@ -11,6 +13,8 @@ Some of the assets have been modified to use this new label, but many have not y
 Author: Rob Dennison.
 
 The remainder of the ReadMe is from Yun's original repo.
+
+[![libWetCloth](http://www.cs.columbia.edu/cg/raymond/tighten_the_towel.jpg)](http://www.cs.columbia.edu/cg/wetcloth/)
 
 libWetCloth
 ================
