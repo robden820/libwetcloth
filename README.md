@@ -1,3 +1,5 @@
+[![libWetCloth](http://www.cs.columbia.edu/cg/raymond/tighten_the_towel.jpg)](http://www.cs.columbia.edu/cg/wetcloth/)
+
 # libWetCloth with PolyPIC #
 
 This repository has modified the work of Yun Fei to incorporate the Polynomial Particle-in-Cell model of Fu et al [A Polynomial Particle-in-Cell Method, 2017].
@@ -6,7 +8,9 @@ To use the different transfers, the assets have been modified to use a "picMetho
 
 Some of the assets have been modified to use this new label, but many have not yet.
 
-[![libWetCloth](http://www.cs.columbia.edu/cg/raymond/tighten_the_towel.jpg)](http://www.cs.columbia.edu/cg/wetcloth/)
+Author: Rob Dennison.
+
+The remainder of the ReadMe is from Yun's original repo.
 
 libWetCloth
 ================
