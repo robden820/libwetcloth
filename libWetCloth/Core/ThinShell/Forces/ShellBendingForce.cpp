@@ -145,7 +145,7 @@ void ShellBendingForce::computeBendingRestPhi(const VectorXs& rest_pos,
 void ShellBendingForce::addEnergyToTotal(const VectorXs& x, const VectorXs& v,
                                          const VectorXs& m, const VectorXs& psi,
                                          const scalar& lambda, scalar& E) {
-  std::cerr << "NOT IMPLEMENTED!" << std::endl;
+  std::cerr << "NOT IMPLEMENTED! - SHELL BENDING FORCE" << std::endl;
 }
 
 void ShellBendingForce::addGradEToTotal(const VectorXs& x, const VectorXs& v,

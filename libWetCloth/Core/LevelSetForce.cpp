@@ -30,7 +30,7 @@ void LevelSetForce::addEnergyToTotal(const VectorXs& x, const VectorXs& v,
                                      const scalar& lambda, scalar& E) {
   assert(x.size() == v.size());
   assert(x.size() % 4 == 0);
-  std::cerr << "NOT IMPLEMENTED!" << std::endl;
+  std::cerr << "NOT IMPLEMENTED! - LEVEL SET FORCE" << std::endl;
 }
 
 void LevelSetForce::addGradEToTotal(const VectorXs& x, const VectorXs& v,

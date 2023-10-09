@@ -101,7 +101,7 @@ void ShellMembraneForce::addEnergyToTotal(const VectorXs& x, const VectorXs& v,
                                           const VectorXs& m,
                                           const VectorXs& psi,
                                           const scalar& lambda, scalar& E) {
-  std::cerr << "NOT IMPLEMENTED!" << std::endl;
+  std::cerr << "NOT IMPLEMENTED! - SHELL MEMBRANE FORCE" << std::endl;
 }
 
 void ShellMembraneForce::addGradEToTotal(const VectorXs& x, const VectorXs& v,

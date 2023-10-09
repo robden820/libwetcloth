@@ -82,7 +82,7 @@ JunctionForce::JunctionForce(const std::shared_ptr<TwoDScene>& scene)
 void JunctionForce::addEnergyToTotal(const VectorXs& x, const VectorXs& v,
                                      const VectorXs& m, const VectorXs& psi,
                                      const scalar& lambda, scalar& E) {
-  std::cerr << "NOT IMPLEMENTED!" << std::endl;
+  std::cerr << "NOT IMPLEMENTED! - JUNCTION FORCE" << std::endl;
 }
 
 void JunctionForce::addGradEToTotal(const VectorXs& x, const VectorXs& v,
