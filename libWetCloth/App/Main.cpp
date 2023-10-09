@@ -550,9 +550,15 @@ void miscOutputCallback() {
                << std::setfill('0') << (g_current_step / g_save_to_binary)
                << ".obj";
 
+    std::stringstream oss_energy;
+    oss_energy << g_short_file_name << "/energy" << std::setw(5)
+               << std::setfill('0') << (g_current_step / g_save_to_binary)
+               << ".obj";
+
     g_executable_simulation->serializeScene(oss_cloth.str(), oss_hairs.str(),
                                             oss_fluid.str(), oss_inbd.str(),
-                                            oss_exbd.str(), oss_spring.str());
+                                            oss_exbd.str(), oss_spring.str(),
+                                            oss_energy.str());
   }
 
   // Update the state of the renderers

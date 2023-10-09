@@ -39,6 +39,7 @@ struct SerializePacket {
   std::string fn_internal_boundaries;
   std::string fn_external_boundaries;
   std::string fn_springs;
+  std::string fn_energy;
 
   std::vector<Vector3i> m_dbl_face_cloth_indices;
   std::vector<Vector3s> m_dbl_face_cloth_vertices;
@@ -67,6 +68,8 @@ struct SerializePacket {
   std::vector<Vector3i> m_internal_indices;
   std::vector<Vector3s> m_internal_vertices;
 
+  scalar m_system_energy;
+
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
@@ -75,10 +78,12 @@ class TwoDSceneSerializer {
 
  public:
   void serializeScene(TwoDScene& scene, const std::string& fn_clothes,
-                      const std::string& fn_hairs, const std::string& fn_fluid,
+                      const std::string& fn_hairs,
+                      const std::string& fn_fluid,
                       const std::string& fn_internal_boundaries,
                       const std::string& fn_external_boundaries,
-                      const std::string& fn_springs);
+                      const std::string& fn_springs,
+                      const std::string& fn_energy);
 
   void serializePositionOnly(TwoDScene& scene, const std::string& fn_pos);
 
@@ -98,6 +103,7 @@ class TwoDSceneSerializer {
   void updateFluid(const TwoDScene& scene, SerializePacket* data);
   void updateMesh(const TwoDScene& scene, SerializePacket* data);
   void updateAttachSprings(const TwoDScene& scene, SerializePacket* data);
+  void updateEnergy(const TwoDScene& scene, SerializePacket* data);
 };
 
 #endif

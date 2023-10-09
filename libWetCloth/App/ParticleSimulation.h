@@ -44,10 +44,12 @@ class ParticleSimulation {
   /////////////////////////////////////////////////////////////////////////////
   // Serialization Functions
   void serializeScene(const std::string& fn_clothes,
-                      const std::string& fn_hairs, const std::string& fn_fluid,
+                      const std::string& fn_hairs,
+                      const std::string& fn_fluid,
                       const std::string& fn_internal_boundaries,
                       const std::string& fn_external_boundaries,
-                      const std::string& fn_spring);
+                      const std::string& fn_spring,
+                      const std::string& fn_energy);
 
   void serializePositionOnly(const std::string& fn_pos);
 

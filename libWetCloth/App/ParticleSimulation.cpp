@@ -416,10 +416,11 @@ void ParticleSimulation::serializePositionOnly(const std::string& fn_pos) {
 void ParticleSimulation::serializeScene(
     const std::string& fn_clothes, const std::string& fn_hairs,
     const std::string& fn_fluid, const std::string& fn_internal_boundaries,
-    const std::string& fn_external_boundaries, const std::string& fn_spring) {
+    const std::string& fn_external_boundaries, const std::string& fn_spring,
+    const std::string& fn_energy) {
   m_scene_serializer.serializeScene(*m_core->getScene(), fn_clothes, fn_hairs,
                                     fn_fluid, fn_internal_boundaries,
-                                    fn_external_boundaries, fn_spring);
+                                    fn_external_boundaries, fn_spring, fn_energy);
 }
 
 void ParticleSimulation::serializeMeta(const std::string& fn_meta)

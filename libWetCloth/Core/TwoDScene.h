@@ -907,6 +907,19 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
 
   const std::vector<VectorXs>& getNodeSurfTensionP() const;
 
+    /*
+    * Modified by Rob Dennison
+    *
+    * New functions for system energy.
+    * EDIT_START
+    */  
+
+  scalar getSystemEnergy() const;
+
+  /*
+  * EDIT_END
+  */
+
   void updateIntersection();
 
   const std::vector<std::vector<RayTriInfo> >& getIntersections() const;
@@ -966,7 +979,7 @@ class TwoDScene : public std::enable_shared_from_this<TwoDScene> {
   void initPolyPIC() const;
 
 /*
-* 
+* EDIT_END
 */
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

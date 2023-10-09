@@ -8499,7 +8499,15 @@ void TwoDScene::insertForce(const std::shared_ptr<Force>& newforce) {
 scalar TwoDScene::computeKineticEnergy() const {
   scalar T = 0.0;
   for (int i = 0; i < getNumParticles(); ++i) {
-    T += m_m(4 * i) * m_v.segment<3>(4 * i).dot(m_v.segment<3>(4 * i));
+      if (isFluid(i))
+      {
+          T += m_fluid_v.segment<3>(4 * i).dot(m_fluid_v.segment<3>(4 * i));
+      }
+      else
+      {
+          T += m_v.segment<3>(4 * i).dot(m_v.segment<3>(4 * i));
+      }
+    T *= m_m(4 * i);
   }
   return 0.5 * T;
 }
@@ -9190,6 +9198,34 @@ void TwoDScene::checkConsistency() {
 void TwoDScene::initPolyPIC() const
 {
     PolyPIC::CalculateCoefficientScales(getCellSize());
+}
+
+scalar TwoDScene::getSystemEnergy() const
+{
+    scalar system_energy = 0.0;
+    scalar gravity = 981.0;
+
+    for (int i = 0; i < getNumParticles(); ++i)
+    {
+        scalar kinetic_energy = 0.0;
+        scalar gp_energy = 0.0;
+
+        if (isFluid(i))
+        {
+            kinetic_energy += m_fluid_v.segment<3>(4 * i).dot(m_fluid_v.segment<3>(4 * i));
+            gp_energy += m_fluid_m(4 * i)* gravity * m_x.segment<3>(4 * i)(1);
+        }
+        else
+        {
+            kinetic_energy += m_v.segment<3>(4 * i).dot(m_v.segment<3>(4 * i));
+            gp_energy += m_m(4 * i) * gravity * m_x.segment<3>(4 * i)(1);
+        }
+
+        system_energy += 0.5 * m_m(4 * i) * kinetic_energy;
+        system_energy += gp_energy;
+    }
+
+    return system_energy;
 }
 
 /*

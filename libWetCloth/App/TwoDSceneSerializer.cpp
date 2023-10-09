@@ -137,12 +137,16 @@ void serialize_subprog(SerializePacket* packet) {
     ofs_spring << "l " << (i * 2) << " " << (i * 2 + 1) << std::endl;
   }
 
+  std::ofstream ofs_energy(packet->fn_energy.c_str());
+  ofs_energy << "e " << std::setprecision(12) << packet->m_system_energy << " " << std::endl;
+
   ofs_fluid.flush();
   ofs_hair.flush();
   ofs_cloth.flush();
   ofs_internal.flush();
   ofs_external.flush();
   ofs_spring.flush();
+  ofs_energy.flush();
 
   ofs_fluid.close();
   ofs_hair.close();
@@ -150,6 +154,7 @@ void serialize_subprog(SerializePacket* packet) {
   ofs_internal.close();
   ofs_external.close();
   ofs_spring.close();
+  ofs_energy.close();
 
   std::cout << "[Frame with " << packet->fn_fluid << " written]" << std::endl;
 
@@ -160,7 +165,8 @@ void TwoDSceneSerializer::serializeScene(
     TwoDScene& scene, const std::string& fn_clothes,
     const std::string& fn_hairs, const std::string& fn_fluid,
     const std::string& fn_internal_boundaries,
-    const std::string& fn_external_boundaries, const std::string& fn_springs) {
+    const std::string& fn_external_boundaries, const std::string& fn_springs,
+    const std::string& fn_energy) {
   SerializePacket* data = new SerializePacket;
 
   updateDoubleFaceCloth(scene, data);
@@ -168,6 +174,7 @@ void TwoDSceneSerializer::serializeScene(
   updateFluid(scene, data);
   updateMesh(scene, data);
   updateAttachSprings(scene, data);
+  updateEnergy(scene, data);
 
   data->fn_clothes = fn_clothes.c_str();
   data->fn_fluid = fn_fluid.c_str();
@@ -175,6 +182,8 @@ void TwoDSceneSerializer::serializeScene(
   data->fn_external_boundaries = fn_external_boundaries.c_str();
   data->fn_internal_boundaries = fn_internal_boundaries.c_str();
   data->fn_springs = fn_springs.c_str();
+  data->fn_energy = fn_energy.c_str();
+
 
   std::thread t(std::bind(serialize_subprog, data));
   t.detach();
@@ -587,4 +596,9 @@ void TwoDSceneSerializer::updateDoubleFaceCloth(const TwoDScene& scene,
       }
     });
   }
+}
+
+void TwoDSceneSerializer::updateEnergy(const TwoDScene& scene, SerializePacket* data)
+{
+    data->m_system_energy = scene.getSystemEnergy();
 }

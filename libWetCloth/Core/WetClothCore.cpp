@@ -73,6 +73,8 @@ void WetClothCore::stepSystem(const scalar& dt) {
             << "), # sub-step: (" << num_substeps << "), sub-dt: " << sub_dt
             << "]" << std::endl;
 
+  m_info.m_system_energy = m_scene->getSystemEnergy();
+
   // Start the possible sub-steps
   for (int k = 0; k < num_substeps; ++k) {
     scalar cur_time = (scalar)m_current_step * dt + k * sub_dt;

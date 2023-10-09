@@ -26,6 +26,7 @@ class WetClothCore {
     scalar m_implicit_div_accu;
     scalar m_historical_max_vel;
     scalar m_historical_max_vel_fluid;
+    scalar m_system_energy;
   };
 
   WetClothCore(const std::shared_ptr<TwoDScene>& scene,
